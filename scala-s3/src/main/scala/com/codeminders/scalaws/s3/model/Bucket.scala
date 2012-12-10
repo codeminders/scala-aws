@@ -1,15 +1,13 @@
 package com.codeminders.scalaws.s3.model
 
-import com.codeminders.s3simpleclient._
 import scala.xml._
 import java.io.InputStream
 import java.io.ByteArrayInputStream
 import scala.io.Source
-import com.codeminders.scalaws.s3.HTTPClient
-import com.codeminders.scalaws.s3.HTTPMethod
-import com.codeminders.scalaws.s3.Response
+import com.codeminders.scalaws.s3.http.HTTPClient
+import com.codeminders.scalaws.s3.http.Response
 import java.net.URL
-import com.codeminders.scalaws.s3.Request
+import com.codeminders.scalaws.s3.http.Request
 
 class Bucket(val client: HTTPClient, val name: String) {
   

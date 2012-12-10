@@ -1,4 +1,4 @@
-package com.codeminders.scalaws.s3
+package com.codeminders.scalaws.s3.http
 import java.io.InputStream
 import HTTPMethod._
 

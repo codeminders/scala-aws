@@ -1,6 +1,5 @@
-package com.codeminders.scalaws.s3
+package com.codeminders.scalaws.s3.http
 
-import com.codeminders.s3simpleclient.model._
 import java.io.InputStream
 import scala.xml._
 import java.util.Date
@@ -13,6 +12,9 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import org.apache.commons.codec.binary.Base64
 import HTTPMethod._
+import com.codeminders.scalaws.s3.AWSCredentials
+import com.codeminders.scalaws.s3.DateUtils
+import com.codeminders.scalaws.s3.AmazonClientException
 
 trait HMACSingature extends HTTPClient {
   

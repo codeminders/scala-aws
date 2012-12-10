@@ -1,4 +1,4 @@
-package com.codeminders.scalaws.s3
+package com.codeminders.scalaws.s3.http
 import java.net.URL
 
 object HTTPMethod extends Enumeration {

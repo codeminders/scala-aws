@@ -3,14 +3,13 @@ package com.codeminders.scalaws.s3.model
 import java.io.InputStream
 import java.io.OutputStream
 import org.apache.commons.io.IOUtils
-import com.codeminders.s3simpleclient._
 import java.io.ByteArrayInputStream
 import scala.io.Source
-import com.codeminders.scalaws.s3.HTTPClient
-import com.codeminders.scalaws.s3.Request
+import com.codeminders.scalaws.s3.http.HTTPClient
+import com.codeminders.scalaws.s3.http.Request
 import java.net.URL
 import java.io.BufferedInputStream
-import com.codeminders.scalaws.s3.Response
+import com.codeminders.scalaws.s3.http.Response
 
 class Key(val client: HTTPClient, val bucket: Bucket, val name: String) {
 

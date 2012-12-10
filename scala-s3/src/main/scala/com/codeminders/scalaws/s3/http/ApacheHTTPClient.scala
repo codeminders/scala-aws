@@ -1,4 +1,4 @@
-package com.codeminders.scalaws.s3
+package com.codeminders.scalaws.s3.http
 import org.apache.http.client.HttpClient
 import org.apache.http.params.HttpParams
 import org.apache.http.params.BasicHttpParams
@@ -25,6 +25,8 @@ import java.io.InputStream
 import org.apache.http.client.methods.HttpPut
 import org.apache.http.HttpStatus
 import scala.xml.XML
+import com.codeminders.scalaws.s3.AmazonClientException
+import com.codeminders.scalaws.s3.AmazonServiceException
 
 class ApacheHTTPClient(config: ClientConfiguration) extends HTTPClient(config) {
   

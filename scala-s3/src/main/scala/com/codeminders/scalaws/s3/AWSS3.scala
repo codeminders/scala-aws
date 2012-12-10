@@ -1,5 +1,9 @@
 package com.codeminders.scalaws.s3
 import com.codeminders.scalaws.s3.model.Bucket
+import com.codeminders.scalaws.s3.http.HTTPClient
+import com.codeminders.scalaws.s3.http.ClientConfiguration
+import com.codeminders.scalaws.s3.http.HMACSingature
+import com.codeminders.scalaws.s3.http.ApacheHTTPClient
 
 class AWSS3(httpClient: HTTPClient){
   
