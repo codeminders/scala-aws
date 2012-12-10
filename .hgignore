@@ -1,0 +1,13 @@
+syntax: glob
+.project
+.classpath
+.worksheet
+.history
+.target/*
+target/*
+project/target/*
+
+syntax: regexp
+etc/AwsCredentials\.properties$
+\.settings$
+\.cache$
