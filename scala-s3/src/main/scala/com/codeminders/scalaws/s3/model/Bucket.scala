@@ -8,20 +8,54 @@ import com.codeminders.scalaws.s3.http.HTTPClient
 import com.codeminders.scalaws.s3.http.Response
 import java.net.URL
 import com.codeminders.scalaws.s3.http.Request
+import CannedACL._
+import sun.security.util.Length
+import com.codeminders.scalaws.s3.AmazonClientException
 
-class Bucket(val client: HTTPClient, val name: String) {
-  
-  def list(prefix: String = "", delimiter: String = "/") : KeysTree = {
-    new KeysTree(client, "", this, prefix, delimiter)
-  }
-  
-  def listAll() : KeysTree = list(delimiter = "")
+object Region extends Enumeration {
+  type Region = Value
+  val US_Standard = Value("")
+  val US_West = Value("us-west-1")
+  val US_West_2 = Value("us-west-2")
+  val EU_Ireland = Value("EU")
+  val AP_Singapore = Value("ap-southeast-1")
+  val AP_Tokyo = Value("ap-northeast-1")
+  val SA_SaoPaulo = Value("sa-east-1")
+}
+
+import Region._
+
+class Bucket(val client: HTTPClient, val name: String, val region: Region = Region.US_Standard, prefix: String = "", delimiter: String = "/") extends KeysTree(client, prefix, delimiter){
   
   def key(name: String): Key = {
     new Key(client, this, name)
   }
   
-  def getBucket(prefix: String = "", delimiter: String = "/", maxKeys: Int = 1000, marker: String = ""): (Array[Key], Array[String]) = {
+  def create(): Bucket = {
+    create((r: Request) => {r})
+  }
+  
+  def create(acl: ExplicitACL): Bucket = {
+    create((r: Request) => {
+      acl.foreach(ea => ea._2.foreach(h => r.setHeader(h, ea._1.toString())))
+      r
+    })
+  }
+  
+  def create(acl: CannedACL): Bucket = {
+    create((r: Request) => r.setHeader("x-amz-acl", acl.toString()))
+  }
+  
+  def delete(): Unit = {
+    client.delete(new Request(new URL("http://s3.amazonaws.com/%s".format(name))), (r: Response) => None)
+  }
+  
+  def putBucketACL(acl: ACL, region: Region = US_Standard): Unit = {
+    val req = new Request(new URL("http://s3.amazonaws.com/%s".format(name)))
+//        client.put(req, (r: Response) => None)(new ByteArrayInputStream(data), data.length)
+  }
+  
+  def list(prefix: String = "", delimiter: String = "/", maxKeys: Int = 1000, marker: String = ""): (Array[Key], Array[String]) = {
 
     def extractKey(node: scala.xml.Node): Key =
       node match {
@@ -31,30 +65,38 @@ class Bucket(val client: HTTPClient, val name: String) {
           Key(client, this, name.text, lastModified.text, etag.text, size.text.toInt, storageClass.text, new Owner(ownerId.text, ownerDisplayName.text))
       }
     
-    val xml = client.get(new Request(new URL("http://s3.amazonaws.com/%s/?prefix=%s&delimiter=%s&max-keys=%d&marker=%s".format(name, prefix, delimiter, maxKeys, marker))), (r: Response) => XML.load(r.content))
+    val responseHandler = (r: Response) => {
+      r.content match {
+        case None => throw AmazonClientException("Could not parse an empty response from server")
+        case Some(is) => XML.load(is) 
+      }
+    }
+    
+    val xml = client.get(new Request(new URL("http://s3.amazonaws.com/%s/?prefix=%s&delimiter=%s&max-keys=%d&marker=%s".format(name, prefix, delimiter, maxKeys, marker))), responseHandler)
     
     ((xml \ "Contents").foldLeft(Array[Key]())((a, b) => a ++ Array(extractKey(b))), (xml \ "CommonPrefixes" \ "Prefix").foldLeft(Array[String]())((a, b) => a ++ Array(b.text)))
   }
   
-}
-
-class KeysTree(val client: HTTPClient, val name: String, val bucket: Bucket, prefix: String = "", delimiter: String = "/")  extends Traversable[Key] {
-  
-  lazy val (keys, commonPrefexes) = bucket.getBucket(prefix, delimiter)
-  
-  lazy val keyGroups = commonPrefexes map { 
-    (e => new KeysTree(client, e, bucket, e, delimiter)) 
+  protected def newInstance(client: HTTPClient, prefix: String, delimiter: String): KeysTree = {
+    new Bucket(client, name, region, prefix, delimiter)
   }
   
-  lazy val keysNumber = keys.size
-  
-  def foreach[U](f: Key => U) = {
-    keys.foreach(f)
-    if (keyGroups.size > 0) {
-      keyGroups.foreach(_.foreach(f))
+  private def create(applyACL: (Request) => Request): Bucket = {
+    val req = new Request(new URL("http://s3.amazonaws.com/%s".format(name)))
+    val data = region match {
+      case US_Standard => {
+        Array[Byte]()
+      }
+      case _ =>
+        {
+          (<CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+             <LocationConstraint>{ region.toString() }</LocationConstraint>
+           </CreateBucketConfiguration>).toString().getBytes()
+        }
     }
+    applyACL(req)
+    client.put(req, (r: Response) => None)(new ByteArrayInputStream(data), data.length)
+    this
   }
-  
-  lazy val groupsNumber = keyGroups.size
   
 }

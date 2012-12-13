@@ -1,4 +1,5 @@
 package com.codeminders.scalaws.s3.http
+
 import org.apache.http.client.HttpClient
 import org.apache.http.params.HttpParams
 import org.apache.http.params.BasicHttpParams
@@ -27,6 +28,7 @@ import org.apache.http.HttpStatus
 import scala.xml.XML
 import com.codeminders.scalaws.s3.AmazonClientException
 import com.codeminders.scalaws.s3.AmazonServiceException
+import org.apache.http.client.methods.HttpDelete
 
 class ApacheHTTPClient(config: ClientConfiguration) extends HTTPClient(config) {
   
@@ -94,7 +96,7 @@ class ApacheHTTPClient(config: ClientConfiguration) extends HTTPClient(config) {
       }
       case HTTPMethod.GET => new HttpGet(request.endPoint.toString())
       case HTTPMethod.HEAD => new HttpHead(request.endPoint.toString())
-      case HTTPMethod.DELETE => new HttpPost(request.endPoint.toString())
+      case HTTPMethod.DELETE => new HttpDelete(request.endPoint.toString())
       case HTTPMethod.PUT => {
         val r = new HttpPut(request.endPoint.toString())
         if(content != None) r.setEntity(new InputStreamEntity(content.get, contentLength))
@@ -102,13 +104,18 @@ class ApacheHTTPClient(config: ClientConfiguration) extends HTTPClient(config) {
       }
     }
     request.foreach(h => httpRequest.setHeader(h._1, h._2))
-    val httpClientResponse = httpClient.execute(httpRequest);
-    val response = new Response(httpClientResponse.getStatusLine().getStatusCode(), httpClientResponse.getStatusLine().getReasonPhrase(), httpClientResponse.getEntity().getContent())
+    val httpClientResponse = httpClient.execute(httpRequest)
+    val responseContent = if(httpClientResponse.getEntity() == null) None else Option(httpClientResponse.getEntity().getContent())
+    val response = new Response(httpClientResponse.getStatusLine().getStatusCode(), httpClientResponse.getStatusLine().getReasonPhrase(), responseContent)
     httpClientResponse.getAllHeaders().foreach(h => response.setHeader(h.getName(), h.getValue()))
     if(response.statusCode / 100 == HttpStatus.SC_OK / 100) {
       response
     } else {
-      throw AmazonServiceException(response.statusCode, XML.load(response.content))
+      response.content match {
+        case None => throw AmazonClientException("Error: %d: %s".format(response.statusCode, response.statusText))
+        case Some(is) => throw AmazonServiceException(response.statusCode, XML.load(is))
+      }
+      
     }
     
   }

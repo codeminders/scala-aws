@@ -32,13 +32,28 @@ class Key(val client: HTTPClient, val bucket: Bucket, val name: String) {
   var owner: Owner = new Owner("", "")
   
   def <<<(data: InputStream, length: Long) {
-    val req = new Request(new URL("http://s3.amazonaws.com/%s/%s".format(bucket.name, name)))
-    client.put(req, (r: Response) => None)(data, length)
+    create(data, length, (r: Request) => {r})
+  }
+  
+  def <<<(data: InputStream, length: Long, acl: ExplicitACL) {
+    create(data, length, (r: Request) => {
+      acl.foreach(ea => ea._2.foreach(h => r.setHeader(h, ea._1.toString())))
+      r
+    })
+  }
+  
+  def <<<(data: InputStream, length: Long, acl: CannedACL) {
+    create(data, length, (r: Request) => r.setHeader("x-amz-acl", acl.toString()))
   }
 
   def >>>(out: OutputStream) {
     val req = new Request(new URL("http://s3.amazonaws.com/%s/%s".format(bucket.name, name)))
-    client.get(req, (r: Response) => IOUtils.copy(r.content, out))
+    client.get(req, (r: Response) => {
+      r.content match {
+        case None =>
+        case Some(is) => IOUtils.copy(is, out) 
+      }
+    })
   }
 
   override def toString() = "contentType:%s, expires:%d, storageClass:%s, size:%d, etag:%s, lastModified:%s, userMetadata:[%s]".format(contentType, expires, storageClass, objectSize, etag, lastModified, userMetadata.mkString(", "))
@@ -80,6 +95,13 @@ class Key(val client: HTTPClient, val bucket: Bucket, val name: String) {
 
   def withACL(acl: String): Key = {
     this.acl = acl
+    this
+  }
+  
+  private def create(data: InputStream, length: Long, applyACL: (Request) => Request): Key = {
+    val req = new Request(new URL("http://s3.amazonaws.com/%s/%s".format(bucket.name, name)))
+    applyACL(req)
+    client.put(req, (r: Response) => None)(data, length)
     this
   }
 }

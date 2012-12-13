@@ -5,6 +5,7 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.Map
 import org.apache.commons.io.IOUtils
 import java.io.ByteArrayInputStream
+import com.codeminders.scalaws.s3.http.HTTPClient
 
 trait HTTPClientMock extends HTTPClient {
   
