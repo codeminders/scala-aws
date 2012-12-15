@@ -9,27 +9,4 @@ object HTTPMethod extends Enumeration {
   val GET, POST, PUT, DELETE, HEAD  = Value
 }
 
-
-
-class Request(val endPoint: URL) extends Traversable[(String, String)] {
-  
-  val headers = mutable.Map[String, String]()
-  
-  def header(key: String): Option[String] = {
-    if(headers.contains(key)) Option(headers(key)) else None
-  }
-  
-  def setHeader(key: String, value: String): Request = {
-   headers(key) = value 
-   this
-  }
-  
-  def hasHeader(key: String) = headers.contains(key)
-  
-  def update(key: String, value: String): Unit = setHeader(key, value)
-  
-  def foreach[U](f: ((String, String)) => U) = {
-    headers.foreach(f)
-  }
-  
-}
+class Request(val endPoint: URL) extends HTTPHeaders[Request]

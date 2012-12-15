@@ -25,33 +25,37 @@ object Region extends Enumeration {
 
 import Region._
 
-class Bucket(val client: HTTPClient, val name: String, val region: Region = Region.US_Standard, prefix: String = "", delimiter: String = "/") extends KeysTree(client, prefix, delimiter){
+class RichBucket(val bucket: Bucket, prefix: String = "", delimiter: String = "/")(implicit val client: HTTPClient) extends KeysTree[RichBucket]{
   
-  def key(name: String): Key = {
-    new Key(client, this, name)
+  def name = bucket.name
+  
+  def region = bucket.region
+  
+  def key(name: String): RichKey = {
+    new Key(bucket, name)
   }
   
-  def create(): Bucket = {
+  def create(): RichBucket = {
     create((r: Request) => {r})
   }
   
-  def create(acl: ExplicitACL): Bucket = {
+  def create(acl: ExplicitACL): RichBucket = {
     create((r: Request) => {
       acl.foreach(ea => ea._2.foreach(h => r.setHeader(h, ea._1.toString())))
       r
     })
   }
   
-  def create(acl: CannedACL): Bucket = {
+  def create(acl: CannedACL): RichBucket = {
     create((r: Request) => r.setHeader("x-amz-acl", acl.toString()))
   }
   
   def delete(): Unit = {
-    client.delete(new Request(new URL("http://s3.amazonaws.com/%s".format(name))), (r: Response) => None)
+    client.delete(new Request(new URL("http://%s.s3.amazonaws.com".format(bucket.name))), (r: Response) => None)
   }
   
   def putBucketACL(acl: ACL, region: Region = US_Standard): Unit = {
-    val req = new Request(new URL("http://s3.amazonaws.com/%s".format(name)))
+    val req = new Request(new URL("http://%s.s3.amazonaws.com".format(bucket.name)))
 //        client.put(req, (r: Response) => None)(new ByteArrayInputStream(data), data.length)
   }
   
@@ -60,9 +64,11 @@ class Bucket(val client: HTTPClient, val name: String, val region: Region = Regi
     def extractKey(node: scala.xml.Node): Key =
       node match {
         case <Contents><Key>{ name }</Key><LastModified>{ lastModified }</LastModified><ETag>{ etag }</ETag><Size>{ size }</Size><StorageClass>{ storageClass }</StorageClass></Contents> => 
-          Key(client, this, name.text, lastModified.text, etag.text, size.text.toInt, storageClass.text)
+          //new Key(bucket, name.text, lastModified.text, 0, etag.text, size.text.toInt, storageClass.text)
+          new Key(bucket, name.text)
         case <Contents><Key>{ name }</Key><LastModified>{ lastModified }</LastModified><ETag>{ etag }</ETag><Size>{ size }</Size><Owner><ID>{ ownerId }</ID><DisplayName>{ ownerDisplayName }</DisplayName></Owner><StorageClass>{ storageClass }</StorageClass></Contents> => 
-          Key(client, this, name.text, lastModified.text, etag.text, size.text.toInt, storageClass.text, new Owner(ownerId.text, ownerDisplayName.text))
+          //new Key(bucket, name.text, lastModified.text, 0, etag.text, size.text.toInt, storageClass.text)
+          new Key(bucket, name.text)
       }
     
     val responseHandler = (r: Response) => {
@@ -72,25 +78,27 @@ class Bucket(val client: HTTPClient, val name: String, val region: Region = Regi
       }
     }
     
-    val xml = client.get(new Request(new URL("http://s3.amazonaws.com/%s/?prefix=%s&delimiter=%s&max-keys=%d&marker=%s".format(name, prefix, delimiter, maxKeys, marker))), responseHandler)
+    val xml = client.get(new Request(new URL("http://%s.s3.amazonaws.com/?prefix=%s&delimiter=%s&max-keys=%d&marker=%s".format(bucket.name, prefix, delimiter, maxKeys, marker))), responseHandler)
     
     ((xml \ "Contents").foldLeft(Array[Key]())((a, b) => a ++ Array(extractKey(b))), (xml \ "CommonPrefixes" \ "Prefix").foldLeft(Array[String]())((a, b) => a ++ Array(b.text)))
   }
   
-  protected def newInstance(client: HTTPClient, prefix: String, delimiter: String): KeysTree = {
-    new Bucket(client, name, region, prefix, delimiter)
+  override def toString() = bucket.toString()
+  
+  protected def newInstance(prefix: String, delimiter: String): RichBucket = {
+    new RichBucket(bucket, prefix, delimiter)
   }
   
-  private def create(applyACL: (Request) => Request): Bucket = {
-    val req = new Request(new URL("http://s3.amazonaws.com/%s".format(name)))
-    val data = region match {
+  private def create(applyACL: (Request) => Request): RichBucket = {
+    val req = new Request(new URL("http://%s.s3.amazonaws.com".format(bucket.name)))
+    val data = bucket.region match {
       case US_Standard => {
         Array[Byte]()
       }
       case _ =>
         {
           (<CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-             <LocationConstraint>{ region.toString() }</LocationConstraint>
+             <LocationConstraint>{ bucket.region.toString() }</LocationConstraint>
            </CreateBucketConfiguration>).toString().getBytes()
         }
     }
@@ -99,4 +107,18 @@ class Bucket(val client: HTTPClient, val name: String, val region: Region = Regi
     this
   }
   
+}
+
+class Bucket(val name: String, val region: Region = Region.US_Standard){
+  override def toString() = "Bucket[%s(%s)]".format(name, region.toString())
+}
+
+object Bucket {
+  implicit def bucket2RichBucket(b : Bucket)(implicit client: HTTPClient): RichBucket = {
+	  new RichBucket(b)
+  }
+  
+  implicit def richBucket2Bucket(b : RichBucket): Bucket = {
+	  b.bucket
+  }
 }

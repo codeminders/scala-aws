@@ -49,24 +49,26 @@ trait HMACSingature extends HTTPClient {
       case None => ""
       case Some(x) => x
     }
+    
+    val bucketName = request.endPoint.getHost().substring(0, request.endPoint.getHost().indexOf(".s3.amazonaws.com"))
 
     val stringToSign = method + "\n" +
       md5Sum + "\n" +
       contentType + "\n" +
       "\n" +
       canonicalizeHeaders(request.headers.toList) + "\n" +
-      canonicalizeResourcePath(request.endPoint.getPath())
+      canonicalizeResourcePath(bucketName, request.endPoint.getPath())
     val signature: String = signAndBase64Encode(stringToSign, credentials.secretKey)
 
     request.setHeader("Authorization", "AWS %s:%s".format(credentials.accessKeyId, signature))
   }
 
-  private def canonicalizeResourcePath(resourcePath: String): String = {    
-    if (resourcePath.isEmpty) {
+  private def canonicalizeResourcePath(bucketName: String, resourcePath: String): String = {    
+    if (resourcePath.isEmpty && bucketName.isEmpty) {
       "/";
     } else {
       val parsedPath = parseRequestPath(resourcePath)
-      "/" + parsedPath.bucketName + urlEncode(parsedPath.keyName).replace("%2F", "/")
+      "/" + bucketName + "/" + urlEncode(parsedPath.path).replace("%2F", "/")
     }
   }
 
@@ -125,31 +127,29 @@ trait HMACSingature extends HTTPClient {
 
     val params = "([^?]*)[?]([^?]+)".r
 
-    val pathWithParameters = "[/]?([^/]+)(.*)[?]([^?]+)".r
+    val pathWithParameters = "[/]([^?]*)[?]([^?]+)".r
 
-    val path = "[/]?([^/]+)([^?]*)?".r
+    val path = "[/]?([^?]*)?".r
 
-    def parse(s: String, bucket: String = "", key: String = ""): ParsedPath = s match {
-      case pathWithParameters(bucket, key, r) => new ParsedPath(bucket, key, parseParameters(r.split("&")))
-      case path(bucket, key) => new ParsedPath(bucket, key, Map())
-      case path(bucket) => new ParsedPath(bucket, "/", Map())
-      case e => throw new IllegalArgumentException("")
+    def parse(s: String, key: String = ""): ParsedPath = s match {
+      case pathWithParameters(p, r) => new ParsedPath(p, parseParameters(r.split("&")))
+      case path(p) => new ParsedPath(p, Map())
+      case e => throw new IllegalArgumentException("Could not parse " + e)
     }
 
     def parseParameters(input: Seq[String], c: Map[String, String] = Map()):Map[String, String] = input.foldLeft(c)((c, s) => s match {
       case params(r, p) => parseParameters(p.split("&"), c)
       case keyValuePair(k, v) => c + (k -> v)
       case keyOnly(k) => c + (k -> "")
-      case e => throw new IllegalArgumentException("")
+      case e => throw new IllegalArgumentException("Could not parse " + e)
     })
 
     parse(input)
   }
 
-  private class ParsedPath(val bucketName: String, val keyName: String, val parameters: Map[String, String]) {
+  private class ParsedPath(val path: String, val parameters: Map[String, String]) {
     override def toString(): String = {
-      val parametersString = if (!parameters.isEmpty) "?" + parameters.foldLeft(Array[String]())((a, e) => a ++ Array(("" + e._1 + "=" + e._2))).mkString("&") else ""
-      "/" + bucketName + keyName + parametersString
+      "/" + path + (if (!parameters.isEmpty) "?" + parameters.foldLeft(Array[String]())((a, e) => a ++ Array(("" + e._1 + "=" + e._2))).mkString("&") else "")
     }
   }
 
