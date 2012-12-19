@@ -2,12 +2,12 @@ package com.codeminders.scalaws.s3
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
-import model.Bucket
 import scala.collection._
 import http.HTTPClient
 import org.scalatest.BeforeAndAfter
 import scala.util.Random
 import scala.collection.mutable.StringBuilder
+import com.codeminders.scalaws.s3.model.Bucket
 
 @RunWith(classOf[JUnitRunner])
 abstract class BasicUnitTest extends FunSuite with BeforeAndAfter {

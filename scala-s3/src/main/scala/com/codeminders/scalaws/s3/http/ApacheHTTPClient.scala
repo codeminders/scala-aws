@@ -112,7 +112,11 @@ class ApacheHTTPClient(config: ClientConfiguration) extends HTTPClient(config) {
       response
     } else {
       response.content match {
-        case None => throw AmazonClientException("Error: %d: %s".format(response.statusCode, response.statusText))
+        case None => method match {
+          //Fix to https://forums.aws.amazon.com/message.jspa?messageID=40931&tstart=0
+          case HTTPMethod.HEAD => invoke(HTTPMethod.GET, request)()
+          case _ => throw AmazonClientException("Error: %d: %s".format(response.statusCode, response.statusText)) 
+        }
         case Some(is) => throw AmazonServiceException(response.statusCode, XML.load(is))
       }
       

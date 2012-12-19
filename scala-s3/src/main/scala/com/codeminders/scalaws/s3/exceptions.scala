@@ -23,10 +23,15 @@ object AmazonClientException {
   lazy val hostId = xml \ "HostId" text
 }
 
+@serializable class NoSuchKeyException(xml: Elem) extends AmazonServiceException(404, xml){
+  lazy val key = xml \ "Key" text
+}
+
 @serializable object AmazonServiceException{
   def apply(statusCode: Int, xml: Elem): AmazonServiceException = {
     xml \ "Code" head match {
       case <Code>NoSuchBucket</Code> => new NoSuchBucketException(xml)
+      case <Code>NoSuchKey</Code> => new NoSuchKeyException(xml)
       case _ => new AmazonServiceException(statusCode, xml)
     }
   }

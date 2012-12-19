@@ -9,28 +9,26 @@ import org.apache.commons.io.IOUtils
 import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 import com.codeminders.scalaws.s3.model.CannedACL
-import com.codeminders.scalaws.s3.model.Region
-import com.codeminders.scalaws.s3.model.Key._
 import scala.io.Source
-import com.codeminders.scalaws.s3.model.RichKey
-import com.codeminders.scalaws.s3.model.Key
 import scala.util.Random
+import java.util.Date
+import scala.collection.immutable.Map
 
 @RunWith(classOf[JUnitRunner])
 class S3SimpleClientTests extends BasicUnitTest {
 
-  test("List Bucket Operation") {
+  test("Verifies correctness of the List Bucket Operation") {
     val bucket = client.bucket(randomName(16)).create
     removeBucketOnExit(bucket)
-    assert(0 === bucket.keysNumber)
+    assert(0 === bucket.size)
     bucket.key("1") <<< (new ByteArrayInputStream(Array[Byte]()), 0)
     bucket.key("2") <<< (new ByteArrayInputStream(Array[Byte]()), 0)
     bucket.key("3") <<< (new ByteArrayInputStream(Array[Byte]()), 0)
-    assert(3 === bucket.refresh.keysNumber)
-    assert(3 === bucket.refresh.foldLeft(0) { (r, e) => r + 1 })
+    assert(3 === bucket.size)
+    assert(3 === bucket.foldLeft(0) { (r, e) => r + 1 })
   }
   
-  test("Put Object Operation and Get Object Operation") {
+  test("Verifies correctness of the Put Object Operation and the Get Object Operation") {
     val bucket = client.bucket(randomName(16)).create
     removeBucketOnExit(bucket)
     val key = bucket.key("1")
@@ -41,9 +39,41 @@ class S3SimpleClientTests extends BasicUnitTest {
     assert("Data of Object 1" === out.toString())
   }
   
-  test("NoSuchBucket exception") {
+  test("Get metadata of nonexistent object") {
+    val bucket = client.bucket(randomName(16)).create
+    removeBucketOnExit(bucket)
+    val key = bucket.key("1")
+    val thrown = intercept[NoSuchKeyException] {
+      key.metadata
+    }
+    assert(thrown.statusCode === 404)
+    assert(thrown.errorCode === "NoSuchKey")
+    assert(thrown.key === "1")
+    
+  }
+  
+  test("Checks default object's metadata values") {
+    val bucket = client.bucket(randomName(16)).create
+    removeBucketOnExit(bucket)
+    val objectNotCreated = new Date()
+    Thread.sleep(1000)
+    val key = bucket.key("1").create()
+    Thread.sleep(1000)
+    val objectCreated = new Date()
+    val metadata = key.metadata
+    assert(metadata.contentType === Some("application/octet-stream"))
+    assert(metadata.contentMD5 === Some("d41d8cd98f00b204e9800998ecf8427e"))
+    assert(metadata.size === Some(0))
+    assert(metadata.userMetadata === Map())
+    assert(metadata.expires === None)
+    assert(metadata.lastModified != None)
+    assert(metadata.lastModified.get.after(objectNotCreated))
+    assert(metadata.lastModified.get.before(objectCreated))
+  }
+  
+  test("Checks that NoSuchBucket exception is thrown for nonexistent bucket") {
     val thrown = intercept[NoSuchBucketException] {
-      client.bucket("nosuchbucket").keysNumber
+      client.bucket("nosuchbucket").size
     }
     assert(thrown.statusCode === 404)
     assert(thrown.errorCode === "NoSuchBucket")
