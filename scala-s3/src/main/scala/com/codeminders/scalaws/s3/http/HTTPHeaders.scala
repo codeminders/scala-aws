@@ -5,25 +5,29 @@ import com.codeminders.scalaws.s3._
 
 trait HTTPHeaders[T <: HTTPHeaders[T]] extends Traversable[Tuple2[String, String]] {
   
-  val self = this.asInstanceOf[T]
+  private val self = this.asInstanceOf[T]
   
-  val headers = mutable.Map[String, String]()
+  protected val _headers = mutable.Map[String, String]()
+  
+  def headers = immutable.Map(_headers.toSeq: _*)
   
   def header(key: String): Option[String] = {
-    if(headers.contains(key)) Option(headers(key)) else None
+    if(_headers.contains(key)) Option(_headers(key)) else None
   }
   
   def setHeader(key: String, value: String): T = {
-   headers(key) = value 
+   _headers(key) = value 
    self
   }
   
-  def hasHeader(key: String) = headers.contains(key)
+  def hasHeader(key: String) = _headers.contains(key)
   
   def update(key: String, value: String): Unit = setHeader(key, value)
   
+  def apply(key: String): String = header(key).get
+  
   def foreach[U](f: ((String, String)) => U) = {
-    headers.foreach(f)
+    _headers.foreach(f)
   }
 
 }

@@ -25,7 +25,7 @@ trait HMACSingature extends HTTPClient {
   
   def credentials_= (cred: AWSCredentials):Unit = cred_ = cred
   
-  override protected def invoke(method: HTTPMethod, request: Request)(content: Option[InputStream] = None, contentLength: Long = 0): Response = {
+  abstract override protected def invoke(method: HTTPMethod, request: Request)(content: Option[InputStream] = None, contentLength: Long = 0): Response = {
     super.invoke(method, sign(method, request))(content, contentLength)
   }
   

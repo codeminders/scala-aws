@@ -8,14 +8,27 @@ import org.scalatest.BeforeAndAfter
 import scala.util.Random
 import scala.collection.mutable.StringBuilder
 import com.codeminders.scalaws.s3.model.Bucket
+import http.ClientConfiguration
+import http.HMACSingature
+import com.codeminders.scalaws.s3.http.HTTPClientMock
 
 @RunWith(classOf[JUnitRunner])
 abstract class BasicUnitTest extends FunSuite with BeforeAndAfter {
 
   private val bucketsToRemove = mutable.Set[Bucket]()
   private val bucketSymbolsRange = 'a'.toInt to 'z'.toInt
-
-  implicit val client: AWSS3 = AWSS3(AWSCredentials())
+  
+  implicit var client: AWSS3 = null
+  
+  before {
+    val testName = this.testNames.foldLeft(""){
+      (s, e) => s + e.toString()
+    }
+    client = new AWSS3(new ClientConfiguration()) with HMACSingature with HTTPClientMock { 
+      this.testId = testName
+      this.credentials = AWSCredentials() 
+    }
+  }
 
   def removeBucketOnExit(bucket: Bucket) {
     bucketsToRemove.add(bucket)
