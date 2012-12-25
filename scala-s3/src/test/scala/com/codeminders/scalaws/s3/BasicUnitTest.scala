@@ -10,7 +10,7 @@ import scala.collection.mutable.StringBuilder
 import com.codeminders.scalaws.s3.model.Bucket
 import http.ClientConfiguration
 import http.HMACSingature
-import com.codeminders.scalaws.s3.http.HTTPClientMock
+import com.codeminders.scalaws.s3.http.HTTPClientCache
 
 @RunWith(classOf[JUnitRunner])
 abstract class BasicUnitTest extends FunSuite with BeforeAndAfter {
@@ -24,8 +24,8 @@ abstract class BasicUnitTest extends FunSuite with BeforeAndAfter {
     val testName = this.testNames.foldLeft(""){
       (s, e) => s + e.toString()
     }
-    client = new AWSS3(new ClientConfiguration()) with HMACSingature with HTTPClientMock { 
-      this.testId = testName
+    client = new AWSS3(new ClientConfiguration()) with HMACSingature with HTTPClientCache { 
+      this.cacheId = testName
       this.credentials = AWSCredentials() 
     }
   }

@@ -12,15 +12,22 @@ import java.util.UUID
 import java.io.FileInputStream
 import java.net.URL
 import scala.xml.Node
+import scala.io.Source
+import com.codeminders.scalaws.s3.utils.VersionUtils
 
-trait HTTPClientMock extends HTTPClient {
+trait HTTPClientCache extends HTTPClient {
 
-  var testId = ""
-  val testDataPath = new File("data")
+  val HTTPClientCacheVersion = VersionUtils.fullVersion
+  
+  val CLEAR_HTTP_CLIENT_CACHE = "CLEAR_HTTP_CLIENT_CACHE"
+  
+  var cacheId:String = "all"
+  val cacheData = ".httpClientCache"
   var requestsCounter = 1
-
+  var sequenceIsSkewed = false
+  
   abstract override protected def invoke(method: HTTPMethod, request: Request)(content: Option[InputStream] = None, contentLength: Long = 0): Response = {
-    val requestLog = new File(new File(testDataPath, Base64.encodeBase64String(testId.getBytes())), requestsCounter.toString())
+    val requestLog = new File(new File(cacheData, Base64.encodeBase64String(cacheId.getBytes())), requestsCounter.toString())
 
     requestsCounter += 1
 
@@ -38,16 +45,24 @@ trait HTTPClientMock extends HTTPClient {
     }
 
   }
+  
+  private lazy val clearHttpClientCache = {
+    if(!System.getenv().containsKey(CLEAR_HTTP_CLIENT_CACHE) && System.getProperty(CLEAR_HTTP_CLIENT_CACHE) == null){
+      false
+    } else {
+      System.getProperty(CLEAR_HTTP_CLIENT_CACHE, System.getenv().get(CLEAR_HTTP_CLIENT_CACHE)).toBoolean
+    }
+  }
 
   private def save(f: File, method: HTTPMethod, request: Request, response: Response): Response = {
     f.delete()
     f.createNewFile()
     val (serializedResponse, newResponse) = serializeResponse(response)
-    val data = <HTTPClientMockLogEntry>
+    val data = <HTTPClientCacheEntry version={HTTPClientCacheVersion}>
                  { serializeHTTPMethod(method) }
                  { serializeRequest(request) }
                  { serializedResponse }
-               </HTTPClientMockLogEntry>
+               </HTTPClientCacheEntry>
     XML.save(f.getCanonicalPath(), data)
     newResponse
   }
@@ -55,8 +70,11 @@ trait HTTPClientMock extends HTTPClient {
   private def retrieve(f: File, method: HTTPMethod, request: Request): Option[Response] = {
     if (f.exists()) {
       val xml = XML.load(new FileInputStream(f))
-      if (deserializeRequest(xml) == request && deserializeHTTPMethod(xml) == method) {
-        Option(deserializeResponse(xml))
+      if (clearHttpClientCache || deserializedVersion(xml) != HTTPClientCacheVersion || deserializedHTTPMethod(xml) != method || deserializedRequest(xml) != request) {
+        sequenceIsSkewed = true
+      }
+      if(!sequenceIsSkewed){
+        Option(deserializedResponse(xml))
       } else {
         None
       }
@@ -64,8 +82,12 @@ trait HTTPClientMock extends HTTPClient {
       None
     }
   }
+  
+  private def deserializedVersion(xml: Seq[Node]): String = {
+    xml \ "HTTPClientCacheEntry" \ "@version" text
+  }
 
-  private def deserializeRequest(xml: Seq[Node]): Request = {
+  private def deserializedRequest(xml: Seq[Node]): Request = {
     val request = new Request(new URL(xml \\ "URL" text))
     (xml \\ "RequestHeaders" \ "Header").foreach {
       h =>
@@ -87,7 +109,7 @@ trait HTTPClientMock extends HTTPClient {
     </Request>
   }
 
-  private def deserializeResponse(xml: Seq[Node]): Response = {
+  private def deserializedResponse(xml: Seq[Node]): Response = {
     val response = new Response((xml \\ "StatusCode" text).toInt, xml \\ "StatusText" text, xml \\ "Content" text match {
       case "" => None
       case s: String => Option(new ByteArrayInputStream(Base64.decodeBase64(s)))
@@ -131,11 +153,12 @@ trait HTTPClientMock extends HTTPClient {
      </Response>, newResponse)
   }
 
-  private def deserializeHTTPMethod(xml: Seq[Node]): HTTPMethod = {
+  private def deserializedHTTPMethod(xml: Seq[Node]): HTTPMethod = {
     HTTPMethod.withName(xml \\ "Method" text)
   }
 
-  def serializeHTTPMethod(m: HTTPMethod): Seq[Node] = {
+  private def serializeHTTPMethod(m: HTTPMethod): Seq[Node] = {
     <Method>{ m.toString() }</Method>
   }
+  
 }
