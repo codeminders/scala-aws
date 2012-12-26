@@ -2,6 +2,7 @@ package com.codeminders.scalaws.s3
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
+import org.scalatest._
 import scala.collection._
 import http.HTTPClient
 import org.scalatest.BeforeAndAfter
@@ -11,6 +12,7 @@ import com.codeminders.scalaws.s3.model.Bucket
 import http.ClientConfiguration
 import http.HMACSingature
 import com.codeminders.scalaws.s3.http.HTTPClientCache
+import scala.collection.immutable.Map
 
 @RunWith(classOf[JUnitRunner])
 abstract class BasicUnitTest extends FunSuite with BeforeAndAfter {
@@ -20,30 +22,12 @@ abstract class BasicUnitTest extends FunSuite with BeforeAndAfter {
   
   implicit var client: AWSS3 = null
   
-  before {
-    val testName = this.testNames.foldLeft(""){
-      (s, e) => s + e.toString()
-    }
+  override protected def runTest(testName: String, reporter: Reporter, stopper: Stopper, configMap: Map[String, Any], tracker: Tracker) {
     client = new AWSS3(new ClientConfiguration()) with HMACSingature with HTTPClientCache { 
-      this.cacheId = testName
-      this.credentials = AWSCredentials() 
+      override val cacheId = testName
+      override val credentials = AWSCredentials() 
     }
-  }
-
-  def removeBucketOnExit(bucket: Bucket) {
-    bucketsToRemove.add(bucket)
-  }
-  
-  def randomName(length: Int): String = {
-    val result = new StringBuilder(length)
-    (1 to length).foreach{
-      i => 
-       result.append((bucketSymbolsRange.start + (math.abs(Random.nextInt()) % bucketSymbolsRange.length)).toChar)
-    }
-    result.toString()
-  }
-
-  after {
+    super.runTest(testName, reporter, stopper, configMap, tracker)
     bucketsToRemove.foreach {
       bucket =>
         bucket.foreach {
@@ -54,5 +38,9 @@ abstract class BasicUnitTest extends FunSuite with BeforeAndAfter {
     }
     bucketsToRemove.clear()
   }
-
+  
+  def removeBucketOnExit(bucket: Bucket) {
+    bucketsToRemove.add(bucket)
+  }
+  
 }

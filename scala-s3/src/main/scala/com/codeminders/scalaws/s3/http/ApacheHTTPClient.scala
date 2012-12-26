@@ -31,7 +31,7 @@ import com.codeminders.scalaws.s3.AmazonServiceException
 import org.apache.http.client.methods.HttpDelete
 
 class ApacheHTTPClient(config: ClientConfiguration) extends HTTPClient(config) {
-  
+
   private val httpClient: HttpClient = {
     val httpClientParams: HttpParams = new BasicHttpParams();
     HttpProtocolParams.setUserAgent(httpClientParams, config.userAgent);
@@ -79,19 +79,19 @@ class ApacheHTTPClient(config: ClientConfiguration) extends HTTPClient(config) {
     }
     httpClient;
   }
-  
+
   override protected def preProcess(method: HTTPMethod, request: Request): Request = {
-    if(!request.hasHeader("Content-Type")){
+    if (!request.hasHeader("Content-Type")) {
       request.setHeader("Content-Type", "application/octet-stream")
     }
     request
   }
-  
+
   override protected def invoke(method: HTTPMethod, request: Request)(content: Option[InputStream] = None, contentLength: Long = 0): Response = {
     val httpRequest = method match {
       case HTTPMethod.POST => {
         val r = new HttpPost(request.endPoint.toString())
-        if(content != None) r.setEntity(new InputStreamEntity(content.get, contentLength))
+        if (content != None) r.setEntity(new InputStreamEntity(content.get, contentLength))
         r
       }
       case HTTPMethod.GET => new HttpGet(request.endPoint.toString())
@@ -99,29 +99,25 @@ class ApacheHTTPClient(config: ClientConfiguration) extends HTTPClient(config) {
       case HTTPMethod.DELETE => new HttpDelete(request.endPoint.toString())
       case HTTPMethod.PUT => {
         val r = new HttpPut(request.endPoint.toString())
-        if(content != None) r.setEntity(new InputStreamEntity(content.get, contentLength))
-        r 
+        if (content != None) r.setEntity(new InputStreamEntity(content.get, contentLength))
+        r
       }
     }
     request.foreach(h => httpRequest.setHeader(h._1, h._2))
     val httpClientResponse = httpClient.execute(httpRequest)
-    val responseContent = if(httpClientResponse.getEntity() == null) None else Option(httpClientResponse.getEntity().getContent())
+    val responseContent = if (httpClientResponse.getEntity() == null) None else Option(httpClientResponse.getEntity().getContent())
     val response = new Response(httpClientResponse.getStatusLine().getStatusCode(), httpClientResponse.getStatusLine().getReasonPhrase(), responseContent)
     httpClientResponse.getAllHeaders().foreach(h => response.setHeader(h.getName(), h.getValue()))
-    if(response.statusCode / 100 == HttpStatus.SC_OK / 100) {
+    if (response.statusCode / 100 == HttpStatus.SC_OK / 100) {
       response
     } else {
       response.content match {
-        case None => method match {
-          //Fix to https://forums.aws.amazon.com/message.jspa?messageID=40931&tstart=0
-          case HTTPMethod.HEAD => invoke(HTTPMethod.GET, request)()
-          case _ => throw AmazonClientException("Error: %d: %s".format(response.statusCode, response.statusText)) 
-        }
+        case None => throw AmazonServiceException(response.statusCode)
         case Some(is) => throw AmazonServiceException(response.statusCode, XML.load(is))
       }
-      
+
     }
-    
+
   }
 
 }

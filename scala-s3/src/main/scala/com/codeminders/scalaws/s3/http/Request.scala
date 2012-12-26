@@ -14,8 +14,8 @@ class Request(val endPoint: URL) extends HTTPHeaders[Request] {
   override def equals(any: Any): Boolean = {
     if (any.isInstanceOf[Request]) {
       val that: Request = any.asInstanceOf[Request]
-      that.endPoint == this.endPoint &&
-        that._headers == this._headers
+      that.endPoint.toString().equals(this.endPoint.toString()) &&
+        that._headers.equals(this._headers)
     } else {
       false
     }

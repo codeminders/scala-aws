@@ -18,7 +18,7 @@ import scala.collection.immutable.Map
 class S3SimpleClientTests extends BasicUnitTest {
 
   test("Verifies correctness of the List Bucket Operation") {
-    val bucket = client.bucket("scala-aws-s3-test-list-bucket").create
+    val bucket = client.bucket("scala-aws-1").create
     removeBucketOnExit(bucket)
     assert(0 === bucket.size)
     bucket.key("1").create
@@ -28,58 +28,54 @@ class S3SimpleClientTests extends BasicUnitTest {
     assert(3 === bucket.foldLeft(0) { (r, e) => r + 1 })
   }
   
-//  test("Verifies correctness of the Put Object Operation and the Get Object Operation") {
-//    val bucket = client.bucket(randomName(16)).create
-//    removeBucketOnExit(bucket)
-//    val key = bucket.key("1")
-//    val data = "Data of Object 1"
-//    key <<< (new ByteArrayInputStream(data.getBytes("UTF-8")), data.length())
-//    val out = new ByteArrayOutputStream()
-//    key >>> out
-//    assert("Data of Object 1" === out.toString())
-//  }
-//  
-//  test("Get metadata of nonexistent object") {
-//    val bucket = client.bucket(randomName(16)).create
-//    removeBucketOnExit(bucket)
-//    val key = bucket.key("1")
-//    val thrown = intercept[NoSuchKeyException] {
-//      key.metadata
-//    }
-//    assert(thrown.statusCode === 404)
-//    assert(thrown.errorCode === "NoSuchKey")
-//    assert(thrown.key === "1")
-//    
-//  }
-//  
-//  test("Checks default object's metadata values") {
-//    val bucket = client.bucket(randomName(16)).create
-//    removeBucketOnExit(bucket)
-//    val objectNotCreated = new Date()
-//    Thread.sleep(1000)
-//    val key = bucket.key("1").create()
-//    Thread.sleep(1000)
-//    val objectCreated = new Date()
-//    val metadata = key.metadata
-//    assert(metadata.contentType === Some("application/octet-stream"))
-//    assert(metadata.contentMD5 === Some("d41d8cd98f00b204e9800998ecf8427e"))
-//    assert(metadata.size === Some(0))
-//    assert(metadata.userMetadata === Map())
-//    assert(metadata.expires === None)
-//    assert(metadata.lastModified != None)
-//    assert(metadata.lastModified.get.after(objectNotCreated))
-//    assert(metadata.lastModified.get.before(objectCreated))
-//  }
-//  
-//  test("Checks that NoSuchBucket exception is thrown for nonexistent bucket") {
-//    val thrown = intercept[NoSuchBucketException] {
-//      client.bucket("nosuchbucket").size
-//    }
-//    assert(thrown.statusCode === 404)
-//    assert(thrown.errorCode === "NoSuchBucket")
-//    assert(thrown.bucketName === "nosuchbucket")
-//    assert(!thrown.hostId.isEmpty())
-//  }
+  test("Verifies correctness of the Put Object Operation and the Get Object Operation") {
+    val bucket = client.bucket("scala-aws-2").create
+    removeBucketOnExit(bucket)
+    val key = bucket.key("1")
+    val data = "Data of Object 1"
+    key <<< (new ByteArrayInputStream(data.getBytes("UTF-8")), data.length())
+    val out = new ByteArrayOutputStream()
+    key >>> out
+    assert("Data of Object 1" === out.toString())
+  }
+  
+  test("Get metadata of nonexistent object") {
+    val bucket = client.bucket("scala-aws-3").create
+    removeBucketOnExit(bucket)
+    val key = bucket.key("1")
+    val thrown = intercept[AmazonServiceException] {
+      key.metadata
+    }
+    assert(thrown.statusCode === 404)
+  }
+  
+  test("Checks default object's metadata values") {
+    val bucket = client.bucket("scala-aws-4").create
+    removeBucketOnExit(bucket)
+    val objectNotCreated = DateUtils.parseRfc822Date("Sun, 1 Dec 2011 12:00:00 GMT")
+    val key = bucket.key("1").create()
+    Thread.sleep(1000)
+    val objectCreated = new Date()
+    val metadata = key.metadata
+    assert(metadata.contentType === Some("application/octet-stream"))
+    assert(metadata.contentMD5 === Some("d41d8cd98f00b204e9800998ecf8427e"))
+    assert(metadata.size === Some(0))
+    assert(metadata.userMetadata === Map())
+    assert(metadata.expires === None)
+    assert(metadata.lastModified != None)
+    assert(metadata.lastModified.get.after(objectNotCreated))
+    assert(metadata.lastModified.get.before(objectCreated))
+  }
+  
+  test("Checks that NoSuchBucket exception is thrown for nonexistent bucket") {
+    val thrown = intercept[NoSuchBucketException] {
+      client.bucket("nosuchbucket").size
+    }
+    assert(thrown.statusCode === 404)
+    assert(thrown.errorCode === "NoSuchBucket")
+    assert(thrown.bucketName === "nosuchbucket")
+    assert(!thrown.hostId.isEmpty())
+  }
 
 }
 
