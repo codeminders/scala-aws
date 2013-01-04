@@ -30,18 +30,18 @@ class RichBucket(client: HTTPClient, val bucket: Bucket){
   
   def region = bucket.region
   
-  def delete(objectName: String): Unit = {
-    client.delete(new Request(new URL("http://%s.s3.amazonaws.com/%s".format(bucket.name, objectName))), (r: Response) => None)
+  def delete(key: Key): Unit = {
+    client.delete(new Request(new URL("http://%s.s3.amazonaws.com/%s".format(bucket.name, key.name))), (r: Response) => None)
   }
   
   def update(key: Key, s3ObjectBuilder: S3ObjectBuilder): RichS3Object = {
    val req = new Request(new URL("http://%s.s3.amazonaws.com/%s".format(name, key.name)))
     client.put(req, (r: Response) => None)(s3ObjectBuilder.content, s3ObjectBuilder.contentLength)
-    new RichS3Object(this.client, this.bucket, key)
+    new RichS3Object(this.client, this.bucket, new RichKey(this.client, this.bucket.name, key.name))
   }
   
   def apply(key: Key): RichS3Object  = {
-      new RichS3Object(this.client, this.bucket, key)
+      new RichS3Object(this.client, this.bucket, new RichKey(this.client, this.bucket.name, key.name))
   }
   
   def list(prefix: String = "", delimiter: String = "", maxKeys: Int = 1000, marker: String = ""): KeysStream = {

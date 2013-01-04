@@ -22,7 +22,7 @@ abstract class BasicUnitTest extends FunSuite with BeforeAndAfter {
       bucket =>
         client(bucket).list().foreach {
           key =>
-            client(bucket).delete(key._1)
+            client(bucket).delete(key)
         }
         client.delete(bucket.name)
     }

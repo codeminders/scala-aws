@@ -10,6 +10,7 @@ import java.net.URL
 import java.util.Date
 import com.codeminders.scalaws.http.Request
 import com.codeminders.scalaws.s3.model.Bucket
+import com.codeminders.scalaws.s3.model.Key
 import com.codeminders.scalaws.AmazonClientException
 import com.codeminders.scalaws.utils.DateUtils
 import com.codeminders.scalaws.s3.model.StorageClass
@@ -18,12 +19,12 @@ import com.codeminders.scalaws.s3.model.ObjectMetadata
 
 object KeysStream {
   
-  private def list(client: HTTPClient, name: String, delimiter: String = "", maxKeys: Int = 1000)(prefix: String = "", marker: String = ""): (Seq[(String, ObjectMetadata)], Seq[String], Boolean) = {
+  private def list(client: HTTPClient, bucketName: String, delimiter: String = "", maxKeys: Int = 1000)(prefix: String = "", marker: String = ""): (Seq[Key], Seq[String], Boolean) = {
 
-    def extractKey(node: scala.xml.Node): (String, ObjectMetadata) =
+    def extractKey(node: scala.xml.Node): Key =
       node match {
         case <Contents><Key>{ name }</Key><LastModified>{ lastModified }</LastModified><ETag>{ etag }</ETag><Size>{ size }</Size><Owner><ID>{ ownerId }</ID><DisplayName>{ ownerDisplayName }</DisplayName></Owner><StorageClass>{ storageClass }</StorageClass></Contents> =>
-          (name.text, ObjectMetadata(size.text.toLong, etag.text, DateUtils.parseIso8601Date(lastModified.text), StorageClass.withName(storageClass.text), new Owner(ownerId.text, ownerDisplayName.text)))
+          new Key(name.text, ObjectMetadata(size.text.toLong, etag.text, DateUtils.parseIso8601Date(lastModified.text), StorageClass.withName(storageClass.text), new Owner(ownerId.text, ownerDisplayName.text)))
       }
 
     val responseHandler = (r: Response) => {
@@ -33,9 +34,9 @@ object KeysStream {
       }
     }
 
-    val xml = client.get(new Request(new URL("http://%s.s3.amazonaws.com/?prefix=%s&delimiter=%s&max-keys=%d&marker=%s".format(name, prefix, delimiter, maxKeys, marker))), responseHandler)
+    val xml = client.get(new Request(new URL("http://%s.s3.amazonaws.com/?prefix=%s&delimiter=%s&max-keys=%d&marker=%s".format(bucketName, prefix, delimiter, maxKeys, marker))), responseHandler)
 
-    ((xml \ "Contents").foldLeft(Array[(String, ObjectMetadata)]())((a, b) => a ++ Array(extractKey(b))), (xml \ "CommonPrefixes" \ "Prefix").foldLeft(Array[String]())((a, b) => a ++ Array(b.text)), (xml \ "IsTruncated").text.toBoolean)
+    ((xml \ "Contents").foldLeft(Array[Key]())((a, b) => a ++ Array(extractKey(b))), (xml \ "CommonPrefixes" \ "Prefix").foldLeft(Array[String]())((a, b) => a ++ Array(b.text)), (xml \ "IsTruncated").text.toBoolean)
   }
   
   def apply(client: HTTPClient, bucket: Bucket, prefix: String = "", delimiter: String = "", maxKeys: Int = 1000, marker: String = ""): KeysStream = {
@@ -45,12 +46,12 @@ object KeysStream {
   }
 }
 
-class KeysStream(keys: Seq[(String, ObjectMetadata)], prefexes: Seq[String], hasNext: Boolean, nextKeys: (String, String) => (Seq[(String, ObjectMetadata)], Seq[String], Boolean), val prefix: String) extends Stream[(String, ObjectMetadata)] {
+class KeysStream(keys: Seq[Key], prefexes: Seq[String], hasNext: Boolean, nextKeys: (String, String) => (Seq[Key], Seq[String], Boolean), val prefix: String) extends Stream[Key] {
 
   lazy val commonPrefexes: Seq[KeysStream] = {
     if (!prefexes.isEmpty) {
       for (prefix <- prefexes) yield {
-        val nk = nextKeys(prefix, keys.last._1)
+        val nk = nextKeys(prefix, keys.last.name)
         new KeysStream(nk._1, nk._2, nk._3, nextKeys, prefix)
       }
     } else Seq.empty
@@ -58,7 +59,7 @@ class KeysStream(keys: Seq[(String, ObjectMetadata)], prefexes: Seq[String], has
 
   override def tail: KeysStream = {
     if (keys.tail.isEmpty) {
-      val nk = nextKeys(prefix, keys.last._1)
+      val nk = nextKeys(prefix, keys.last.name)
       new KeysStream(nk._1, nk._2, nk._3, nextKeys, prefix)
     } else {
       new KeysStream(keys.tail, prefexes, hasNext, nextKeys, prefix)

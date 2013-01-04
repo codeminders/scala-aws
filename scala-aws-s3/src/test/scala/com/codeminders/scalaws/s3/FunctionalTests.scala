@@ -20,7 +20,7 @@ import com.codeminders.scalaws.NoSuchBucketException
 @RunWith(classOf[JUnitRunner])
 class FunctionalTests extends BasicUnitTest {
 
-  test("Verifies correctness of the List Bucket Operation") {
+  ignore("Verifies correctness of the List Bucket Operation") {
     
     val bucket = client.create("scala-aws")
     removeBucketOnExit(bucket)
@@ -43,26 +43,34 @@ class FunctionalTests extends BasicUnitTest {
     assert(3 === bucket.list(delimiter="/").commonPrefexes(1).length)
   }
   
-  test("Verifies correctness of the Put Object Operation and the Get Object Operation") {
+  ignore("Verifies correctness of the Put Object Operation and the Get Object Operation") {
     val bucket = client.create("scala-aws")
     removeBucketOnExit(bucket)
     bucket("1") = "Data of Object 1"
     assert("Data of Object 1" === IOUtils.toString(bucket("1").content))
   }
   
-  test("Get metadata of nonexistent object") {
+  test("Verifies correctness RichBucket's exist method") {
+    val bucket = client.create("scala-aws")
+    removeBucketOnExit(bucket)
+    bucket("1") = "Data of Object 1"
+    assert(client.exist(bucket))
+    assert(!client.exist("no-such-bucket"))
+  }
+  
+  ignore("Get metadata of nonexistent object") {
     val bucket = client.create("scala-aws")
     removeBucketOnExit(bucket)
     val thrown = intercept[AmazonServiceException] {
-      bucket("1").metadata
+      bucket("1").key.metadata
     }
     assert(thrown.statusCode === 404)
   }
   
-  test("Checks default object's metadata values") {
+  ignore("Checks default object's metadata values") {
     val bucket = client.create("scala-aws")
     removeBucketOnExit(bucket)
-    val metadata = (bucket("1") = "1").metadata
+    val metadata = (bucket("1") = "1").key.metadata
     assert(metadata.contentType === Some("application/octet-stream"))
     assert(metadata.contentMD5 === Some("c4ca4238a0b923820dcc509a6f75849b"))
     assert(metadata.size === Some(1))
@@ -74,7 +82,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(metadata.lastModified.get.before(new Date()))
   }
   
-  test("Checks that NoSuchBucket exception is thrown for nonexistent bucket") {
+  ignore("Checks that NoSuchBucket exception is thrown for nonexistent bucket") {
     val thrown = intercept[NoSuchBucketException] {
       client("nosuchbucket")("1") = "1"
     }
