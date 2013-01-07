@@ -8,50 +8,48 @@ import scala.annotation.tailrec
 import java.util.Date
 
 object Sync extends App {
-  
-  if(args.length != 2) {
-    throw new IllegalArgumentException("Usage: " +  Sync.getClass().getName() + " local_path bucket_name")
+
+  if (args.length != 2) {
+    throw new IllegalArgumentException("Usage: " + Sync.getClass().getName() + " local_path bucket_name")
   }
-  
+
   val localPath = new File(args(0))
   val bucketName = args(1)
-  
-  if(!localPath.exists()){
+
+  if (!localPath.exists()) {
     throw new IllegalArgumentException("There is no such file or directory as %s".format(localPath))
   }
-  
+
   new Sync(localPath, bucketName).sync
 
 }
 
-class Sync(localPath: File, bucketName: String){
-  
+class Sync(localPath: File, bucketName: String) {
+
   val client: AWSS3 = AWSS3(AWSCredentials())
-  
-  if(!client.exist(bucketName)) client.create(bucketName)
-  
+
+  if (!client.exist(bucketName)) client.create(bucketName)
+
   val bucket = client(bucketName)
-  
-  def sync(){
+
+  def sync() {
     syncRecursively(localPath)
   }
-  
+
   @tailrec
-  private def syncRecursively(dir: File){
-    for(file <- dir.listFiles()){
-      if(file.isDirectory()) syncRecursively(file)
+  private def syncRecursively(dir: File) {
+    for (file <- dir.listFiles()) {
+      if (file.isDirectory()) syncRecursively(file)
       else {
         val key = file.getAbsolutePath().substring(localPath.getAbsolutePath().length())
-        if(!bucket.exist(key)){
+        if (!bucket.exist(key) || (bucket(key).metadata.lastModified match {
+          case None => true
+          case Some(d) => d.before(new Date(file.lastModified()))
+        })) {
           bucket(key) = file
-        } else {
-          bucket(key).metadata.lastModified match {
-            case None => bucket(key) = file
-            case Some(d) => if(d.before(new Date(file.lastModified()))) bucket(key) = file
-          }
         }
       }
     }
   }
-  
+
 }
