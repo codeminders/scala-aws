@@ -33,13 +33,13 @@ class Sync(localPath: File, bucketName: String){
   val bucket = client(bucketName)
   
   def sync(){
-    syncRecursively(localPath, client(bucketName).list().toSet)
+    syncRecursively(localPath)
   }
   
   @tailrec
-  private def syncRecursively(dir: File, keys: Set[Key]){
+  private def syncRecursively(dir: File){
     for(file <- dir.listFiles()){
-      if(file.isDirectory()) syncRecursively(file, keys)
+      if(file.isDirectory()) syncRecursively(file)
       else {
         val key = file.getAbsolutePath().substring(localPath.getAbsolutePath().length())
         if(!bucket.exist(key)){
