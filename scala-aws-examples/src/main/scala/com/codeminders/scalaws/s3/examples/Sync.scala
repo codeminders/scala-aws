@@ -7,14 +7,25 @@ import com.codeminders.scalaws.s3.model.Key
 import scala.annotation.tailrec
 import java.util.Date
 
+/**
+ * Sync program entry point
+ *
+ * Usage:
+ * <pre>
+ * {@literal
+ * Sync <i>local_path bucket_name</i>
+ * }
+ * </pre>
+ */
+
 object Sync extends App {
 
   if (args.length != 2) {
     throw new IllegalArgumentException("Usage: " + Sync.getClass().getName() + " local_path bucket_name")
   }
 
-  val localPath = new File(args(0))
-  val bucketName = args(1)
+  private val localPath = new File(args(0))
+  private val bucketName = args(1)
 
   if (!localPath.exists()) {
     throw new IllegalArgumentException("There is no such file or directory as %s".format(localPath))
@@ -24,29 +35,42 @@ object Sync extends App {
 
 }
 
+/**
+ * Clones contents of a given directory to a bucket. It copies only files that have changed.
+ *
+ * @constructor create a new instance of Sync
+ * @param localPath path to a folder on local FS
+ * @param bucketName a name of your bucket
+ *
+ */
+
 class Sync(localPath: File, bucketName: String) {
 
-  val client: AWSS3 = AWSS3(AWSCredentials())
+  private val client: AWSS3 = AWSS3(AWSCredentials())
 
   if (!client.exist(bucketName)) client.create(bucketName)
 
-  val bucket = client(bucketName)
+  private val bucket = client(bucketName)
 
+  /**
+   * synchronizes files
+   *
+   */
   def sync() {
     syncRecursively(localPath)
-  }
 
-  @tailrec
-  private def syncRecursively(dir: File) {
-    for (file <- dir.listFiles()) {
-      if (file.isDirectory()) syncRecursively(file)
-      else {
-        val key = file.getAbsolutePath().substring(localPath.getAbsolutePath().length())
-        if (!bucket.exist(key) || (bucket(key).metadata.lastModified match {
-          case None => true
-          case Some(d) => d.before(new Date(file.lastModified()))
-        })) {
-          bucket(key) = file
+    @tailrec
+    def syncRecursively(dir: File) {
+      for (file <- dir.listFiles()) {
+        if (file.isDirectory()) syncRecursively(file)
+        else {
+          val key = file.getAbsolutePath().substring(localPath.getAbsolutePath().length())
+          if (!bucket.exist(key) || (bucket(key).metadata.lastModified match {
+            case None => true
+            case Some(d) => d.before(new Date(file.lastModified()))
+          })) {
+            bucket(key) = file
+          }
         }
       }
     }
