@@ -44,8 +44,8 @@ class RichBucket(client: HTTPClient, val bucket: Bucket){
       new RichS3Object(this.client, this.bucket, new RichKey(this.client, this.bucket.name, key.name))
   }
   
-  def list(prefix: String = "", delimiter: String = "", maxKeys: Int = 1000, marker: String = ""): KeysStream = {
-    KeysStream(client, bucket, prefix, delimiter, maxKeys, marker)
+  def list(prefix: String = "", delimiter: String = "", maxKeys: Int = 1000, marker: String = ""): Keys = {
+    Keys(client, bucket, prefix, delimiter, maxKeys, marker)
   }
   
   override def toString() = bucket.toString()

@@ -17,7 +17,7 @@ import com.codeminders.scalaws.s3.model.StorageClass
 import com.codeminders.scalaws.s3.model.Owner
 import com.codeminders.scalaws.s3.model.ObjectMetadata
 
-object KeysStream {
+object Keys {
   
   private def list(client: HTTPClient, bucketName: String, delimiter: String = "", maxKeys: Int = 1000)(prefix: String = "", marker: String = ""): (Seq[Key], Seq[String], Boolean) = {
 
@@ -39,30 +39,30 @@ object KeysStream {
     ((xml \ "Contents").foldLeft(Array[Key]())((a, b) => a ++ Array(extractKey(b))), (xml \ "CommonPrefixes" \ "Prefix").foldLeft(Array[String]())((a, b) => a ++ Array(b.text)), (xml \ "IsTruncated").text.toBoolean)
   }
   
-  def apply(client: HTTPClient, bucket: Bucket, prefix: String = "", delimiter: String = "", maxKeys: Int = 1000, marker: String = ""): KeysStream = {
+  def apply(client: HTTPClient, bucket: Bucket, prefix: String = "", delimiter: String = "", maxKeys: Int = 1000, marker: String = ""): Keys = {
     val nextKeys = list(client, bucket.name, delimiter = delimiter, maxKeys = maxKeys)(_, _)
     val lbr = nextKeys(prefix, marker)
-    new KeysStream(lbr._1, lbr._2, lbr._3, nextKeys, prefix)
+    new Keys(lbr._1, lbr._2, lbr._3, nextKeys, prefix)
   }
 }
 
-class KeysStream(keys: Seq[Key], prefexes: Seq[String], hasNext: Boolean, nextKeys: (String, String) => (Seq[Key], Seq[String], Boolean), val prefix: String) extends Stream[Key] {
+class Keys(keys: Seq[Key], prefexes: Seq[String], hasNext: Boolean, nextKeys: (String, String) => (Seq[Key], Seq[String], Boolean), val prefix: String) extends Stream[Key] {
 
-  lazy val commonPrefexes: Seq[KeysStream] = {
+  lazy val commonPrefexes: Seq[Keys] = {
     if (!prefexes.isEmpty) {
       for (prefix <- prefexes) yield {
-        val nk = nextKeys(prefix, keys.last.name)
-        new KeysStream(nk._1, nk._2, nk._3, nextKeys, prefix)
+        val nk = nextKeys(prefix, "")
+        new Keys(nk._1, nk._2, nk._3, nextKeys, prefix)
       }
     } else Seq.empty
   }
 
-  override def tail: KeysStream = {
+  override def tail: Keys = {
     if (keys.tail.isEmpty) {
-      val nk = nextKeys(prefix, keys.last.name)
-      new KeysStream(nk._1, nk._2, nk._3, nextKeys, prefix)
-    } else {
-      new KeysStream(keys.tail, prefexes, hasNext, nextKeys, prefix)
+        val nk = nextKeys(prefix, keys.last.name)
+        new Keys(nk._1, nk._2, nk._3, nextKeys, prefix)
+      } else {
+      new Keys(keys.tail, prefexes, hasNext, nextKeys, prefix)
     }
   }
 

@@ -2,7 +2,7 @@ package com.codeminders.scalaws.s3
 
 import com.codeminders.scalaws.http.HTTPClient
 import com.codeminders.scalaws.s3.api.RichBucket
-import com.codeminders.scalaws.s3.api.KeysStream
+import com.codeminders.scalaws.s3.api.Keys
 import org.apache.commons.io.IOUtils
 
 package object model {
