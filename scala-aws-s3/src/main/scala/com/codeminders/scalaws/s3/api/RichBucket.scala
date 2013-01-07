@@ -7,7 +7,6 @@ import scala.io.Source
 import com.codeminders.scalaws.http.HTTPClient
 import com.codeminders.scalaws.http.Response
 import java.net.URL
-import com.codeminders.scalaws.http.Request
 import com.codeminders.scalaws.AmazonClientException
 import com.codeminders.scalaws.s3.model.CannedACL
 import com.codeminders.scalaws.s3.model.ExplicitACL
@@ -23,6 +22,10 @@ import com.codeminders.scalaws.utils.DateUtils
 import com.codeminders.scalaws.s3.model.S3Object
 import com.codeminders.scalaws.s3.model.S3ObjectBuilder
 import com.codeminders.scalaws.s3.model.Expiration
+import com.codeminders.scalaws.AmazonServiceException
+import java.io.File
+import java.io.FileInputStream
+import com.codeminders.scalaws.s3.Request
 
 class RichBucket(client: HTTPClient, val bucket: Bucket){
   
@@ -31,11 +34,11 @@ class RichBucket(client: HTTPClient, val bucket: Bucket){
   def region = bucket.region
   
   def delete(key: Key): Unit = {
-    client.delete(new Request(new URL("http://%s.s3.amazonaws.com/%s".format(bucket.name, key.name))), (r: Response) => None)
+    client.delete(Request(bucket.name, key.name), (r: Response) => None)
   }
   
   def update(key: Key, s3ObjectBuilder: S3ObjectBuilder): RichS3Object = {
-   val req = new Request(new URL("http://%s.s3.amazonaws.com/%s".format(name, key.name)))
+   val req = Request(name, key.name)
     client.put(req, (r: Response) => None)(s3ObjectBuilder.content, s3ObjectBuilder.contentLength)
     new RichS3Object(this.client, this.bucket, new RichKey(this.client, this.bucket.name, key.name))
   }
@@ -46,6 +49,16 @@ class RichBucket(client: HTTPClient, val bucket: Bucket){
   
   def list(prefix: String = "", delimiter: String = "", maxKeys: Int = 1000, marker: String = ""): Keys = {
     Keys(client, bucket, prefix, delimiter, maxKeys, marker)
+  }
+  
+  def exist(key: Key): Boolean = {
+    try{
+	    client.head(Request(bucket.name, key.name))
+	    true
+    } catch {
+      case e: AmazonServiceException => if(e.statusCode == 404) false else throw e
+      case e => throw e
+    }
   }
   
   override def toString() = bucket.toString()

@@ -1,4 +1,4 @@
-package com.codeminders.scalaaws.examples
+package com.codeminders.scalaws.s3.examples
 
 import com.codeminders.scalaws
 import com.codeminders.scalaws.s3.AWSS3

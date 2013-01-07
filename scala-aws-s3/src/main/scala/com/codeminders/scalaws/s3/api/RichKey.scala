@@ -1,7 +1,6 @@
 package com.codeminders.scalaws.s3.api
 
 import com.codeminders.scalaws.http.HTTPClient
-import com.codeminders.scalaws.http.Request
 import com.codeminders.scalaws.http.Response
 import com.codeminders.scalaws.utils.DateUtils
 import com.codeminders.scalaws.s3.model.Bucket
@@ -9,13 +8,14 @@ import com.codeminders.scalaws.s3.model.Key
 import com.codeminders.scalaws.s3.model.ObjectMetadata
 import com.codeminders.scalaws.s3.model.Expiration
 import java.net.URL
+import com.codeminders.scalaws.s3.Request
 
 class RichKey(client: HTTPClient, val bucketName: String, val keyName: String) {
   
   def name = keyName
 
   def metadata: ObjectMetadata = {
-     val req = new Request(new URL("http://%s.s3.amazonaws.com/%s".format(bucketName, keyName)))
+     val req = Request(bucketName, keyName)
      extractObjectMetadata(client.head(req)._2)
   }
 

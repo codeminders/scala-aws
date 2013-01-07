@@ -8,7 +8,6 @@ import com.codeminders.scalaws.http.HTTPClient
 import com.codeminders.scalaws.http.Response
 import java.net.URL
 import java.util.Date
-import com.codeminders.scalaws.http.Request
 import com.codeminders.scalaws.s3.model.Bucket
 import com.codeminders.scalaws.s3.model.Key
 import com.codeminders.scalaws.AmazonClientException
@@ -16,6 +15,7 @@ import com.codeminders.scalaws.utils.DateUtils
 import com.codeminders.scalaws.s3.model.StorageClass
 import com.codeminders.scalaws.s3.model.Owner
 import com.codeminders.scalaws.s3.model.ObjectMetadata
+import com.codeminders.scalaws.s3.Request
 
 object Keys {
   
@@ -34,7 +34,7 @@ object Keys {
       }
     }
 
-    val xml = client.get(new Request(new URL("http://%s.s3.amazonaws.com/?prefix=%s&delimiter=%s&max-keys=%d&marker=%s".format(bucketName, prefix, delimiter, maxKeys, marker))), responseHandler)
+    val xml = client.get(Request(bucketName, parameters=Array(("prefix", prefix), ("delimiter", delimiter), ("max-keys", maxKeys.toString) ,("marker", marker))), responseHandler)
 
     ((xml \ "Contents").foldLeft(Array[Key]())((a, b) => a ++ Array(extractKey(b))), (xml \ "CommonPrefixes" \ "Prefix").foldLeft(Array[String]())((a, b) => a ++ Array(b.text)), (xml \ "IsTruncated").text.toBoolean)
   }

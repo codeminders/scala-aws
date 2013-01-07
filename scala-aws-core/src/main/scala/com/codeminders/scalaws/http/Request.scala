@@ -33,4 +33,9 @@ class Request(val endPoint: URL) extends HTTPHeaders[Request] {
     }
     requestCopy
   }
+  
+  override def toString(): String = {
+    endPoint.toString()
+  }
+  
 }

@@ -9,7 +9,6 @@ import com.codeminders.scalaws.s3.model.Region._
 import com.codeminders.scalaws.s3.model.Bucket
 import com.codeminders.scalaws.s3.model.Owner
 import com.codeminders.scalaws.s3.api.RichBucket
-import com.codeminders.scalaws.http.Request
 import com.codeminders.scalaws.http.Response
 import com.codeminders.scalaws.AmazonClientException
 import com.codeminders.scalaws.AmazonServiceException
@@ -20,11 +19,11 @@ import scala.xml.XML
 class AWSS3(config: ClientConfiguration) extends ApacheHTTPClient(config) with Traversable[RichBucket]{
   
   def delete(bucket: Bucket): Unit = {
-    delete(new Request(new URL("http://%s.s3.amazonaws.com".format(bucket.name))), (r: Response) => None)
+    delete(Request(bucket.name), (r: Response) => None)
   }
   
   def create(bucket: Bucket, region: Region = US_Standard): RichBucket = {
-    val req = new Request(new URL("http://%s.s3.amazonaws.com".format(bucket.name)))
+    val req = Request(bucket.name)
     val data = region match {
       case US_Standard => {
         Array[Byte]()
@@ -47,7 +46,7 @@ class AWSS3(config: ClientConfiguration) extends ApacheHTTPClient(config) with T
   
   def exist(bucket: Bucket): Boolean = {
     try{
-	    head(new Request(new URL("http://%s.s3.amazonaws.com/".format(bucket.name))))
+	    head(Request(bucket.name))
 	    true
     } catch {
       case e: AmazonServiceException => if(e.statusCode == 404) false else throw e
@@ -74,7 +73,7 @@ class AWSS3(config: ClientConfiguration) extends ApacheHTTPClient(config) with T
       }
     }
 
-    val xml = get(new Request(new URL("http://s3.amazonaws.com/")), responseHandler)
+    val xml = get(Request(), responseHandler)
 
     ((xml \ "Bucket").foldLeft(Array[RichBucket]())((a, b) => a ++ Array(extractBucket(b))), new Owner(xml \ "Owner" \ "ID" text, xml \ "Owner" \ "DisplayName" text))
   }
