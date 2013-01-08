@@ -59,7 +59,6 @@ class Sync(localPath: File, bucketName: String) {
   def sync() {
     syncRecursively(localPath)
 
-    @tailrec
     def syncRecursively(dir: File) {
       for (file <- dir.listFiles()) {
         if (file.isDirectory()) syncRecursively(file)

@@ -8,6 +8,8 @@ import java.io.File
 import java.io.InputStream
 import java.io.FileInputStream
 import scala.io.Source
+import java.io.ByteArrayInputStream
+import com.codeminders.scalaws.helpers.io.SourceInputStream
 
 package object model {
   
@@ -25,6 +27,10 @@ package object model {
   
   implicit def file2S3ObjectBuilder(file: File): S3ObjectBuilder = {
     new S3ObjectBuilder(new FileInputStream(file), file.length())
+  }
+  
+  implicit def source2InputStream(s: Source): InputStream = {
+    new SourceInputStream(s)
   }
   
 }
