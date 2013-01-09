@@ -7,6 +7,7 @@ syntax: glob
 .httpClientCache/*
 target/*
 project/target/*
+bin/*
 
 syntax: regexp
 etc/AwsCredentials\.properties$
