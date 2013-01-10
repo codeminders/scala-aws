@@ -16,13 +16,13 @@ import com.codeminders.scalaws.s3.model.Bucket
 import com.codeminders.scalaws.AmazonServiceException
 import com.codeminders.scalaws.utils.DateUtils
 import com.codeminders.scalaws.NoSuchBucketException
+import com.codeminders.scalaws.s3.model.CanonicalGrantee
 
 @RunWith(classOf[JUnitRunner])
 class FunctionalTests extends BasicUnitTest {
 
-  ignore("Verifies correctness of the List Bucket Operation") {
-    
-    val bucket = client.create("scala-aws")
+  test("Verifies correctness of the List Bucket Operation") {
+    val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     assert(0 === bucket.list().size)
     bucket("1") = "1"
@@ -43,23 +43,22 @@ class FunctionalTests extends BasicUnitTest {
     assert(3 === bucket.list(delimiter="/").commonPrefexes(1).length)
   }
   
-  ignore("Verifies correctness of the Put Object Operation and the Get Object Operation") {
-    val bucket = client.create("scala-aws")
+  test("Verifies correctness of the Put Object Operation and the Get Object Operation") {
+    val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     bucket("1") = "Data of Object 1"
     assert("Data of Object 1" === IOUtils.toString(bucket("1").content))
   }
   
   test("Verifies correctness RichBucket's exist method") {
-    val bucket = client.create("scala-aws")
+    val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
-    bucket("1") = "Data of Object 1"
     assert(client.exist(bucket))
     assert(!client.exist("no-such-bucket"))
   }
   
-  ignore("Get metadata of nonexistent object") {
-    val bucket = client.create("scala-aws")
+  test("Get metadata of nonexistent object") {
+    val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     val thrown = intercept[AmazonServiceException] {
       bucket("1").metadata
@@ -67,8 +66,8 @@ class FunctionalTests extends BasicUnitTest {
     assert(thrown.statusCode === 404)
   }
   
-  ignore("Checks default object's metadata values") {
-    val bucket = client.create("scala-aws")
+  test("Checks default object's metadata values") {
+    val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     val metadata = (bucket("1") = "1").metadata
     assert(metadata.contentType === Some("application/octet-stream"))
@@ -82,7 +81,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(metadata.lastModified.get.before(new Date()))
   }
   
-  ignore("Checks that NoSuchBucket exception is thrown for nonexistent bucket") {
+  test("Checks that NoSuchBucket exception is thrown for nonexistent bucket") {
     val thrown = intercept[NoSuchBucketException] {
       client("nosuchbucket")("1") = "1"
     }
@@ -90,6 +89,19 @@ class FunctionalTests extends BasicUnitTest {
     assert(thrown.errorCode === "NoSuchBucket")
     assert(thrown.bucketName === "nosuchbucket")
     assert(!thrown.hostId.isEmpty())
+  }
+  
+  test("Checks default object's acl values") {
+    val bucket = client.create(randomBucketName)
+    removeBucketOnExit(bucket)
+    bucket("1") = "Data of Object 1"
+    val acl = bucket("1").acl
+    assert(!acl.owner.id.isEmpty())
+    assert(!acl.owner.displayName.isEmpty())
+    assert(acl.grants.size === 1)
+    assert(acl.grants(0).grantee.isInstanceOf[CanonicalGrantee])
+    assert(acl.grants(0).grantee.asInstanceOf[CanonicalGrantee].id === acl.owner.id)
+    assert(acl.grants(0).grantee.asInstanceOf[CanonicalGrantee].displayName === acl.owner.displayName)
   }
 
 }

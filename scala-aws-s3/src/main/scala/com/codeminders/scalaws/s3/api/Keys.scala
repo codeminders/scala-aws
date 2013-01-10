@@ -36,7 +36,7 @@ object Keys {
 
     val xml = client.get(Request(bucketName, parameters=Array(("prefix", prefix), ("delimiter", delimiter), ("max-keys", maxKeys.toString) ,("marker", marker))), responseHandler)
 
-    ((xml \ "Contents").foldLeft(Array[Key]())((a, b) => a ++ Array(extractKey(b))), (xml \ "CommonPrefixes" \ "Prefix").foldLeft(Array[String]())((a, b) => a ++ Array(b.text)), (xml \ "IsTruncated").text.toBoolean)
+    ((xml \ "Contents").foldLeft(Array[Key]())((a, b) => a :+ extractKey(b)), (xml \ "CommonPrefixes" \ "Prefix").foldLeft(Array[String]())((a, b) => a :+ b.text), (xml \ "IsTruncated").text.toBoolean)
   }
   
   def apply(client: HTTPClient, bucket: Bucket, prefix: String = "", delimiter: String = "", maxKeys: Int = 1000, marker: String = ""): Keys = {

@@ -20,6 +20,9 @@ trait HMACSingature extends HTTPClient {
   
   private var cred_ : AWSCredentials = null
   
+  private val signedParameters:Set[String] = Set("acl", "torrent", "logging", "location", "policy", "requestPayment", "versioning",
+    		"versions", "versionId", "notification", "uploadId", "uploads", "partNumber", "website", 
+    		"delete", "lifecycle", "tagging", "cors")
   
   def credentials: AWSCredentials = if(cred_ ==  null) throw new IllegalStateException("Please authenticate yourself before signing the request") else cred_
   
@@ -57,18 +60,22 @@ trait HMACSingature extends HTTPClient {
       contentType + "\n" +
       "\n" +
       canonicalizeHeaders(request.headers.toList) + "\n" +
-      canonicalizeResourcePath(bucketName, request.endPoint.getPath())
+      canonicalizeResourcePath(bucketName, request.endPoint.getPath(), request.endPoint.getQuery())
     val signature: String = signAndBase64Encode(stringToSign, credentials.secretKey)
 
     request.setHeader("Authorization", "AWS %s:%s".format(credentials.accessKeyId, signature))
   }
 
-  private def canonicalizeResourcePath(bucketName: String, resourcePath: String): String = {    
+  private def canonicalizeResourcePath(bucketName: String, resourcePath: String, queryString: String): String = {    
     if (resourcePath.isEmpty && bucketName.isEmpty) {
       "/";
     } else {
-      val parsedPath = parseRequestPath(resourcePath)
-      "/" + bucketName + "/" + urlEncode(parsedPath.path).replace("%2F", "/")
+      val query = (parseQueryString(queryString).filter(kv => signedParameters.contains(kv._1)).foldLeft(Array.empty[String]){
+        (a, kv) =>
+          a :+ kv._1 + (if(kv._2.isEmpty) kv._2 else "=" + kv._2) 
+      }).mkString("&")
+      
+      "/" + bucketName + urlEncode(resourcePath).replace("%2F", "/") + (if(query.isEmpty()) "" else "?" + query)
     }
   }
 
@@ -119,23 +126,13 @@ trait HMACSingature extends HTTPClient {
     (tmpList.toSeq.sortBy(_._1) map { case (k, v) => k + ":" + v }).mkString("\n")
   }
 
-  private def parseRequestPath(input: String): ParsedPath = {
+  private def parseQueryString(queryString: String): Map[String, String] = {
 
     val keyValuePair = """([^?|^&|^=]+)=([^?|^&|^=]+)""".r
     
     val keyOnly = """([^?|^&|^=]+)=""".r
 
     val params = "([^?]*)[?]([^?]+)".r
-
-    val pathWithParameters = "[/]([^?]*)[?]([^?]+)".r
-
-    val path = "[/]?([^?]*)?".r
-
-    def parse(s: String, key: String = ""): ParsedPath = s match {
-      case pathWithParameters(p, r) => new ParsedPath(p, parseParameters(r.split("&")))
-      case path(p) => new ParsedPath(p, Map())
-      case e => throw new IllegalArgumentException("Could not parse " + e)
-    }
 
     def parseParameters(input: Seq[String], c: Map[String, String] = Map()):Map[String, String] = input.foldLeft(c)((c, s) => s match {
       case params(r, p) => parseParameters(p.split("&"), c)
@@ -144,7 +141,8 @@ trait HMACSingature extends HTTPClient {
       case e => throw new IllegalArgumentException("Could not parse " + e)
     })
 
-    parse(input)
+    if(queryString == null || queryString.isEmpty()) Map.empty
+    else parseParameters(queryString.split("&"))
   }
 
   private class ParsedPath(val path: String, val parameters: Map[String, String]) {

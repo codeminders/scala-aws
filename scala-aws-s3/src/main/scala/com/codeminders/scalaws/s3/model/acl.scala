@@ -6,16 +6,12 @@ import scala.collection._
 
 object Permission extends Enumeration {
   type Permission = Value
-  val READ = Value("x-amz-grant-read")
-  val WRITE = Value("x-amz-grant-write")
-  val READ_ACP = Value("x-amz-grant-read-acp")
-  val WRITE_ACP = Value("x-amz-grant-write-acp")
-  val FULL_CONTROL = Value("x-amz-grant-full-control")
+  val READ, WRITE, READ_ACP, WRITE_ACP, FULL_CONTROL = Value
 }
 
 import Permission._
 
-class ACL(val owner: Owner, val grants: List[Grant]) {
+class ACL(val owner: Owner, val grants: Seq[Grant]) {
   def toXML {
     <AccessControlPolicy xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
       <Owner>
