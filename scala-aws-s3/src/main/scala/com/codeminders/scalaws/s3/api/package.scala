@@ -14,8 +14,4 @@ package object api {
 	  new S3Object(obj.bucket, obj.key, obj.content, obj.contentLength)
   }
   
-  implicit def richKey2Key(key : RichKey): Key = {
-	  new Key(key.name, key.metadata)
-  }
-  
 }

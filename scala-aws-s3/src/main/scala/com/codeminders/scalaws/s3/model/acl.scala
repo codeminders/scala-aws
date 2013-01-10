@@ -15,9 +15,7 @@ object Permission extends Enumeration {
 
 import Permission._
 
-trait ACL
-
-class CanonicalACL(val owner: Owner, val grants: List[Grant]) extends ACL{
+class ACL(val owner: Owner, val grants: List[Grant]) {
   def toXML {
     <AccessControlPolicy xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
       <Owner>
@@ -68,7 +66,7 @@ object GroupGrantee {
   val LogDelivery = new GroupGrantee("http://acs.amazonaws.com/groups/s3/LogDelivery")
 }
 
-class CannedACL(aclValue: String) extends ACL {
+class CannedACL(aclValue: String) {
   override def toString(): String = {
     aclValue
   }
@@ -84,19 +82,19 @@ object CannedACL {
   def LogDeliveryWrite = new CannedACL("log-delivery-write")
 }
 
-class ExplicitACL extends ACL with Traversable[(Permission, List[String])]{
+class ExplicitACL extends Traversable[(Permission, List[String])] {
   val acl = mutable.Map[Permission, List[String]]()
-  
+
   def addPermission(p: Permission, id: String) = {
     acl.get(p) match {
       case None => acl += (p -> List(id))
       case Some(s) => acl += (p -> (id :: s))
     }
-    
+
   }
-  
+
   def foreach[U](f: ((Permission, List[String])) => U) = {
     acl.foreach(e => f(e))
   }
-  
+
 }

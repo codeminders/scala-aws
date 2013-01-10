@@ -40,11 +40,11 @@ class RichBucket(client: HTTPClient, val bucket: Bucket){
   def update(key: Key, s3ObjectBuilder: S3ObjectBuilder): RichS3Object = {
    val req = Request(name, key.name)
     client.put(req, (r: Response) => None)(s3ObjectBuilder.content, s3ObjectBuilder.contentLength)
-    new RichS3Object(this.client, this.bucket, new RichKey(this.client, this.bucket.name, key.name))
+    new RichS3Object(this.client, this.bucket, key)
   }
   
   def apply(key: Key): RichS3Object  = {
-      new RichS3Object(this.client, this.bucket, new RichKey(this.client, this.bucket.name, key.name))
+      new RichS3Object(this.client, this.bucket, key)
   }
   
   def list(prefix: String = "", delimiter: String = "", maxKeys: Int = 1000, marker: String = ""): Keys = {

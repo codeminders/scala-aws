@@ -24,7 +24,7 @@ object Keys {
     def extractKey(node: scala.xml.Node): Key =
       node match {
         case <Contents><Key>{ name }</Key><LastModified>{ lastModified }</LastModified><ETag>{ etag }</ETag><Size>{ size }</Size><Owner><ID>{ ownerId }</ID><DisplayName>{ ownerDisplayName }</DisplayName></Owner><StorageClass>{ storageClass }</StorageClass></Contents> =>
-          new Key(name.text, ObjectMetadata(size.text.toLong, etag.text, DateUtils.parseIso8601Date(lastModified.text), StorageClass.withName(storageClass.text), new Owner(ownerId.text, ownerDisplayName.text)))
+          new Key(name.text, Option(size.text.toLong), Option(etag.text), Option(DateUtils.parseIso8601Date(lastModified.text)), Option(StorageClass.withName(storageClass.text)), Option(new Owner(ownerId.text, ownerDisplayName.text)))
       }
 
     val responseHandler = (r: Response) => {

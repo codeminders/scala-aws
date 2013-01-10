@@ -62,7 +62,7 @@ class FunctionalTests extends BasicUnitTest {
     val bucket = client.create("scala-aws")
     removeBucketOnExit(bucket)
     val thrown = intercept[AmazonServiceException] {
-      bucket("1").key.metadata
+      bucket("1").metadata
     }
     assert(thrown.statusCode === 404)
   }
@@ -70,7 +70,7 @@ class FunctionalTests extends BasicUnitTest {
   ignore("Checks default object's metadata values") {
     val bucket = client.create("scala-aws")
     removeBucketOnExit(bucket)
-    val metadata = (bucket("1") = "1").key.metadata
+    val metadata = (bucket("1") = "1").metadata
     assert(metadata.contentType === Some("application/octet-stream"))
     assert(metadata.contentMD5 === Some("c4ca4238a0b923820dcc509a6f75849b"))
     assert(metadata.size === Some(1))
