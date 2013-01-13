@@ -6,7 +6,7 @@ trait HTTPHeaders[T <: HTTPHeaders[T]] extends Traversable[Tuple2[String, String
   
   private val self = this.asInstanceOf[T]
   
-  protected val _headers = mutable.Map[String, String]()
+  protected val _headers = mutable.Map.empty[String, String]
   
   def headers = immutable.Map(_headers.toSeq: _*)
   

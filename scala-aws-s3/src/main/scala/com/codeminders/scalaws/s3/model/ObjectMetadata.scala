@@ -11,4 +11,4 @@ class ObjectMetadata(val size: Option[Long] = None,
   val expiration: Option[Expiration] = None,
   val contentType: Option[String] = None,
   val versionId: Option[String] = None,
-  val userMetadata: Map[String, String] = Map.empty)
+  val userMetadata: Seq[(String, String)] = Seq.empty)

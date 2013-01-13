@@ -1,4 +1,4 @@
-package com.codeminders.scalaws.s3
+package com.codeminders.scalaws.s3.functional
 
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
@@ -8,6 +8,10 @@ import scala.collection._
 import com.codeminders.scalaws.s3.model.Bucket
 import com.codeminders.scalaws.AWSCredentials
 import java.util.Random
+import com.codeminders.scalaws.s3.AWSS3
+import com.codeminders.scalaws.s3.Implicits._
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
 
 
 @RunWith(classOf[JUnitRunner])

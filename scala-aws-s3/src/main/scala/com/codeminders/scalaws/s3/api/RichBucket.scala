@@ -9,7 +9,6 @@ import com.codeminders.scalaws.http.Response
 import java.net.URL
 import com.codeminders.scalaws.AmazonClientException
 import com.codeminders.scalaws.s3.model.CannedACL
-import com.codeminders.scalaws.s3.model.ExplicitACL
 import com.codeminders.scalaws.s3.model.Bucket
 import com.codeminders.scalaws.s3.model.ObjectMetadata
 import com.codeminders.scalaws.s3.model.ACL
@@ -37,9 +36,9 @@ class RichBucket(client: HTTPClient, val bucket: Bucket){
     client.delete(Request(bucket.name, key.name), (r: Response) => None)
   }
   
-  def update(key: Key, s3ObjectBuilder: S3ObjectBuilder): RichS3Object = {
-   val req = Request(name, key.name)
-    client.put(req, (r: Response) => None)(s3ObjectBuilder.content, s3ObjectBuilder.contentLength)
+  def update(key: Key, objectBuilder: S3ObjectBuilder): RichS3Object = {
+   val req = Request(name, key.name, headers = objectBuilder.metadata)
+    client.put(req, (r: Response) => None)(objectBuilder.content, objectBuilder.contentLength)
     new RichS3Object(this.client, this.bucket, key)
   }
   

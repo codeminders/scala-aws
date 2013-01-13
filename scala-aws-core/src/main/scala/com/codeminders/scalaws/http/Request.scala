@@ -9,7 +9,9 @@ object HTTPMethod extends Enumeration {
   val GET, POST, PUT, DELETE, HEAD = Value
 }
 
-class Request(val endPoint: URL) extends HTTPHeaders[Request] {
+class Request(val endPoint: URL, headers: Seq[(String, String)] = Seq.empty) extends HTTPHeaders[Request] {
+  
+  headers.foreach(h => _headers += h)
 
   override def equals(any: Any): Boolean = {
     if (any.isInstanceOf[Request]) {

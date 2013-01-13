@@ -20,6 +20,7 @@ import com.codeminders.scalaws.s3.model.CanonicalGrantee
 import com.codeminders.scalaws.s3.model.Permission
 import com.codeminders.scalaws.s3.model.EmailAddressGrantee
 import com.codeminders.scalaws.s3.model.GroupGrantee
+import scala.collection.immutable.Set
 
 class RichS3Object(client: HTTPClient, val bucket: Bucket, val key: Key) {
 
@@ -90,7 +91,8 @@ class RichS3Object(client: HTTPClient, val bucket: Bucket, val key: Key) {
         case Some(exp) => Expiration(exp)
       },
       Option(headers("Content-Type")),
-      headers.get("x-amz-version-id"))
+      headers.get("x-amz-version-id"),
+      headers.filter(kv => kv._1.startsWith("x-amz-meta-")).foldLeft(Array.empty[(String, String)])((s, kv) => s :+ (kv._1.substring(11), kv._2)))
   }
 
 }
