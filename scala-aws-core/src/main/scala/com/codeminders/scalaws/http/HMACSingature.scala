@@ -15,6 +15,7 @@ import HTTPMethod._
 import com.codeminders.scalaws.AWSCredentials
 import com.codeminders.scalaws.utils.DateUtils
 import com.codeminders.scalaws.AmazonClientException
+import scala.collection.immutable.Seq
 
 trait HMACSingature extends HTTPClient {
   
@@ -43,12 +44,12 @@ trait HMACSingature extends HTTPClient {
     request("Host") = request.endPoint.getHost()
     request("X-Amz-Date") = date
 
-    val md5Sum = request.header("Content-MD5") match {
+    val md5Sum = request("Content-MD5") match {
       case None => ""
       case Some(x) => x
     }
 
-    val contentType = request.header("Content-Type") match {
+    val contentType = request("Content-Type") match {
       case None => ""
       case Some(x) => x
     }
@@ -59,11 +60,12 @@ trait HMACSingature extends HTTPClient {
       md5Sum + "\n" +
       contentType + "\n" +
       "\n" +
-      canonicalizeHeaders(request.headers.toList) + "\n" +
+      canonicalizeHeaders(request.headers) + "\n" +
       canonicalizeResourcePath(bucketName, request.endPoint.getPath(), request.endPoint.getQuery())
     val signature: String = signAndBase64Encode(stringToSign, credentials.secretKey)
 
-    request.setHeader("Authorization", "AWS %s:%s".format(credentials.accessKeyId, signature))
+    request("Authorization") = "AWS %s:%s".format(credentials.accessKeyId, signature)
+    request
   }
 
   private def canonicalizeResourcePath(bucketName: String, resourcePath: String, queryString: String): String = {    
@@ -111,19 +113,19 @@ trait HMACSingature extends HTTPClient {
     }
   }
 
-  private def canonicalizeHeaders(headers: List[(String, String)]): String = {
+  private def canonicalizeHeaders(headers: Seq[(String, String)]): String = {
     import scala.collection.mutable.Map
 
-    val tmpList: Map[String, String] = headers.foldLeft(Map[String, String]()) {
+    val tmpList: Map[String, Seq[String]] = headers.foldLeft(Map[String, Seq[String]]()) {
       (m, e) =>
         val k = e._1.toLowerCase().trim()
         val v = e._2.trim()
         if (k.startsWith("x-amz-")) {
-          if (m.contains(k)) m += (k -> (v + "," + m(k)))
-          else m += (k -> v)
+          if (m.contains(k)) m += (k -> (m(k) :+ (v)))
+          else m += (k -> Vector(v))
         } else m
     }
-    (tmpList.toSeq.sortBy(_._1) map { case (k, v) => k + ":" + v }).mkString("\n")
+    (tmpList.toSeq.sortBy(_._1) map { case (k, v) => k + ":" + v.sortWith((v1, v2) => v1 > v2).mkString(",") }).mkString("\n")
   }
 
   private def parseQueryString(queryString: String): Map[String, String] = {
@@ -134,7 +136,7 @@ trait HMACSingature extends HTTPClient {
 
     val params = "([^?]*)[?]([^?]+)".r
 
-    def parseParameters(input: Seq[String], c: Map[String, String] = Map()):Map[String, String] = input.foldLeft(c)((c, s) => s match {
+    def parseParameters(input: Array[String], c: Map[String, String] = Map()):Map[String, String] = input.foldLeft(c)((c, s) => s match {
       case params(r, p) => parseParameters(p.split("&"), c)
       case keyValuePair(k, v) => c + (k -> v)
       case keyOnly(k) => c + (k -> "")

@@ -81,8 +81,8 @@ class ApacheHTTPClient(config: ClientConfiguration) extends HTTPClient(config) {
   }
 
   override protected def preProcess(method: HTTPMethod, request: Request): Request = {
-    if (!request.hasHeader("Content-Type")) {
-      request.setHeader("Content-Type", "application/octet-stream")
+    if (!request.exists("Content-Type")) {
+      request("Content-Type") = "application/octet-stream"
     }
     request
   }
@@ -103,11 +103,11 @@ class ApacheHTTPClient(config: ClientConfiguration) extends HTTPClient(config) {
         r
       }
     }
-    request.foreach(h => httpRequest.setHeader(h._1, h._2))
+    request.foreach(h => httpRequest.addHeader(h._1, h._2))
     val httpClientResponse = httpClient.execute(httpRequest)
     val responseContent = if (httpClientResponse.getEntity() == null) None else Option(httpClientResponse.getEntity().getContent())
     val response = new Response(httpClientResponse.getStatusLine().getStatusCode(), httpClientResponse.getStatusLine().getReasonPhrase(), responseContent)
-    httpClientResponse.getAllHeaders().foreach(h => response.setHeader(h.getName(), h.getValue()))
+    httpClientResponse.getAllHeaders().foreach(h => response(h.getName()) = h.getValue())
     if (response.statusCode / 100 == HttpStatus.SC_OK / 100) {
       response
     } else {

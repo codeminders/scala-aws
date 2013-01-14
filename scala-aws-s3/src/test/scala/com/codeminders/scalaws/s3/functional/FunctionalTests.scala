@@ -131,10 +131,10 @@ class FunctionalTests extends BasicUnitTest {
   test("Verify that user can set object's metadata on object creation") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
-    bucket("1") = "data".withMetadata("k1", "v1").withMetadata("k2", "v2")
+    bucket("1") = "data".withMetadata("k1", "v1").withMetadata("k2", "v2").withMetadata("k2", "v3")
     val um = bucket("1").metadata.userMetadata
     assert(um.find(kv => ("k1", "v1") == kv) != None)
-    assert(um.find(kv => ("k2", "v2") == kv) != None)
+    assert(um.find(kv => ("k2", "v3,v2") == kv) != None)
   }
 
 }

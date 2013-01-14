@@ -27,7 +27,10 @@ class RichS3Object(client: HTTPClient, val bucket: Bucket, val key: Key) {
   lazy val (content, contentLength) = {
     val req = Request(bucket.name, key.name)
     client.get(req, (r: Response) => {
-      (r.content.get, r("Content-Length").toLong)
+      r("Content-Length") match {
+        case None => throw AmazonClientException("Got Get object response with missing Content-Length")
+        case Some(l) => (r.content.get, l.toLong)
+      }
     })
   }
   

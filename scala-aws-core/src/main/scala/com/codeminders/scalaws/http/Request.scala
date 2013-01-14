@@ -31,7 +31,7 @@ class Request(val endPoint: URL, headers: Seq[(String, String)] = Seq.empty) ext
     val requestCopy = new Request(endPoint)
     _headers.foreach {
       kv =>
-        requestCopy.setHeader(kv._1, kv._2)
+        requestCopy(kv._1) = kv._2
     }
     requestCopy
   }

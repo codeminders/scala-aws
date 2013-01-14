@@ -161,7 +161,7 @@ trait HTTPClientCache extends HTTPClient {
     val newResponse = new Response(r.statusCode, r.statusText, stream)
     r.headers.foreach {
       kv =>
-        newResponse.setHeader(kv._1, kv._2)
+        newResponse(kv._1) = kv._2
     }
     (<Response type="response" statusCode={ r.statusCode.toString() }>
        <StatusText>{ r.statusText }</StatusText>

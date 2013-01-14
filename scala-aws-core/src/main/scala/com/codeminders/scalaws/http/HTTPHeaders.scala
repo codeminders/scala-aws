@@ -1,29 +1,31 @@
 package com.codeminders.scalaws.http
 
 import scala.collection._
+import scala.collection.mutable.Set
 
 trait HTTPHeaders[T <: HTTPHeaders[T]] extends Traversable[Tuple2[String, String]] {
   
   private val self = this.asInstanceOf[T]
   
-  protected val _headers = mutable.Map.empty[String, String]
+  protected val _headers: Set[(String, String)] = Set.empty
   
-  def headers = immutable.Map(_headers.toSeq: _*)
+  def headers = _headers.toList
   
-  def header(key: String): Option[String] = {
-    if(_headers.contains(key)) Option(_headers(key)) else None
+  def update(key: String, value: String) {
+    _headers += Tuple2(key, value)
   }
   
-  def setHeader(key: String, value: String): T = {
-   _headers(key) = value 
-   self
+  def exists(key: String): Boolean = {
+    _headers.find(kv => kv._1 == key) match {
+      case None => false
+      case Some(v) => true
+    }
   }
   
-  def hasHeader(key: String) = _headers.contains(key)
-  
-  def update(key: String, value: String): Unit = setHeader(key, value)
-  
-  def apply(key: String): String = header(key).get
+  def apply(key: String): Option[String] = _headers.find(kv => kv._1 == key) match {
+    case None => None
+    case Some(kv) => Some(kv._2)
+  }
   
   def foreach[U](f: ((String, String)) => U) = {
     _headers.foreach(f)
