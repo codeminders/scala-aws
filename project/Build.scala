@@ -28,7 +28,7 @@ object ScalaAWSBuild extends Build {
     settings = Defaults.defaultSettings ++ buildSettings ++ Seq(libraryDependencies ++= Seq(Compile.commonsio, Compile.commonscodec, Test.junit, Test.scalatest))) dependsOn (core)
 
   lazy val examples = Project(id = "scala-aws-examples",
-    base = file("scala-aws-examples"), settings = Defaults.defaultSettings ++ buildSettings ++ Seq(libraryDependencies ++= Seq(Compile.amazonAWS, Test.junit, Test.scalatest))) dependsOn (s3)
+    base = file("scala-aws-examples"), settings = Defaults.defaultSettings ++ buildSettings ++ Seq(libraryDependencies ++= Seq(Test.junit, Test.scalatest))) dependsOn (s3)
 
 }
 
@@ -38,7 +38,6 @@ object Dependencies {
     val httpclient = "org.apache.httpcomponents" % "httpclient" % "4.2.1"
     val commonsio = "commons-io" % "commons-io" % "2.4"
     val commonscodec = "commons-codec" % "commons-codec" % "1.7"
-    val amazonAWS = "com.amazonaws" % "aws-java-sdk" % "1.3.27"
   }
 
   object Test {

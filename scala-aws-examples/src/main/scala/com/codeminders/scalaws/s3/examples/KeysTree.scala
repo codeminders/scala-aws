@@ -6,8 +6,7 @@ import com.codeminders.scalaws.s3.model.Key
 import com.codeminders.scalaws.s3.api.Keys
 import com.codeminders.scalaws.s3.model.ObjectMetadata
 import com.codeminders.scalaws.AWSCredentials
-import com.amazonaws.services.s3.model.S3ObjectSummary
-import com.amazonaws.services.s3.AmazonS3Client
+import com.codeminders.scalaws.s3.Implicits._
 
 /**
  * KeysTree program entry point

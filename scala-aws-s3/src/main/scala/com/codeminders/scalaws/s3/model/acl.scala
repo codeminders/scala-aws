@@ -2,6 +2,8 @@ package com.codeminders.scalaws.s3.model
 import scala.xml.Elem
 import scala.io.Source
 import scala.collection._
+import scala.xml.XML
+import scala.xml.Node
 
 object Permission extends Enumeration {
   type Permission = Value
@@ -11,37 +13,60 @@ object Permission extends Enumeration {
 import Permission._
 
 class ACL(val owner: Owner, val grants: Seq[Grant]) {
-  def toXML {
-    <AccessControlPolicy xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-      <Owner>
-        <ID>{ owner.uid }</ID>
-        <DisplayName>{ owner.displayName }</DisplayName>
-      </Owner>
-      <AccessControlList>
-        {
-          for (g <- grants) yield <Grant>
-                                    {
-                                      g.grantee match {
-                                        case canonical: CanonicalGrantee =>
-                                          <Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="CanonicalUser">
-                                            <ID>{ canonical.uid }</ID>
-                                            <DisplayName>{ canonical.displayName }</DisplayName>
-                                          </Grantee>
-                                        case email: EmailAddressGrantee =>
-                                          <Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="AmazonCustomerByEmail">
-                                            <EmailAddress>{ email.emailAddress }</EmailAddress>
-                                          </Grantee>
-                                        case group: GroupGrantee =>
-                                          <Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="Group">
-                                            <URI>{ group.url }</URI>
-                                          </Grantee>
-                                      }
+  def toXML: Node = {
+    scala.xml.Utility.trim(<AccessControlPolicy xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+                             <Owner>
+                               <ID>{ owner.uid }</ID>
+                               <DisplayName>{ owner.displayName }</DisplayName>
+                             </Owner>
+                             <AccessControlList>
+                               {
+                                 for (g <- grants) yield <Grant>
+                                                           {
+                                                             g.grantee match {
+                                                               case canonical: CanonicalGrantee =>
+                                                                 <Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="CanonicalUser">
+                                                                   <ID>{ canonical.uid }</ID>
+                                                                   <DisplayName>{ canonical.displayName }</DisplayName>
+                                                                 </Grantee>
+                                                               case email: EmailAddressGrantee =>
+                                                                 <Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="AmazonCustomerByEmail">
+                                                                   <EmailAddress>{ email.emailAddress }</EmailAddress>
+                                                                 </Grantee>
+                                                               case group: GroupGrantee =>
+                                                                 <Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="Group">
+                                                                   <URI>{ group.url }</URI>
+                                                                 </Grantee>
+                                                             }
 
-                                    }
-                                  </Grant>
-        }
-      </AccessControlList>
-    </AccessControlPolicy>
+                                                           }
+                                                           <Permission>{ g.permission }</Permission>
+                                                         </Grant>
+                               }
+                             </AccessControlList>
+                           </AccessControlPolicy>)
+  }
+}
+
+object ACL {
+  def apply(xml: Node): ACL = {
+    def extractOwner(node: scala.xml.Node): Owner =
+      node match {
+        case <Owner><ID>{ ownerID }</ID><DisplayName>{ displayName }</DisplayName></Owner> =>
+          new Owner(ownerID.text, displayName.text)
+      }
+
+    def extractGrant(node: scala.xml.Node): Grant =
+      node match {
+        case <Grant><Grantee><ID>{ granteeID }</ID><DisplayName>{ granteeDisplayName }</DisplayName></Grantee><Permission>{ permission }</Permission></Grant> =>
+          new Grant(new CanonicalGrantee(granteeID.text, granteeDisplayName.text), Permission.withName(permission.text))
+        case <Grant><Grantee><EmailAddress>{ emailAddress }</EmailAddress></Grantee><Permission>{ permission }</Permission></Grant> =>
+          new Grant(new EmailAddressGrantee(emailAddress.text), Permission.withName(permission.text))
+        case <Grant><Grantee><URI>{ url }</URI></Grantee><Permission>{ permission }</Permission></Grant> =>
+          new Grant(new GroupGrantee(url.text), Permission.withName(permission.text))
+      }
+
+    new ACL(extractOwner((xml \ "Owner").head), (xml \\ "Grant").foldLeft(Array[Grant]())((a, g) => a :+ extractGrant(g)))
   }
 }
 
@@ -54,12 +79,12 @@ class Grant(val grantee: Grantee, val permission: Permission) {
       false
     }
   }
-  
+
   override def hashCode(): Int = {
     41 * (
       41 + this.grantee.hashCode()) + this.permission.hashCode()
   }
-  
+
   override def toString: String = {
     "Grant[grantee=%s,permission=%s]".format(grantee.toString(), permission.toString())
   }
@@ -79,10 +104,10 @@ class CanonicalGrantee(val uid: String, val displayName: String) extends Grantee
     }
   }
   override def hashCode(): Int = 41 * (
-      41 + this.uid.hashCode()) + this.displayName.hashCode()
+    41 + this.uid.hashCode()) + this.displayName.hashCode()
 
   override def granteeID = uid
-  
+
   override def toString: String = {
     "CanonicalGrantee[id=%s,displayName=%s]".format(uid, displayName)
   }
@@ -100,7 +125,7 @@ class EmailAddressGrantee(val emailAddress: String) extends Grantee {
   override def hashCode(): Int = this.emailAddress.hashCode
 
   override def granteeID = """emailAddress="%s"""".format(emailAddress)
-  
+
   override def toString: String = {
     "EmailAddressGrantee[%s]".format(emailAddress)
   }
@@ -118,7 +143,7 @@ class GroupGrantee(val url: String) extends Grantee {
   override def hashCode(): Int = this.url.hashCode
 
   override def granteeID = """uri="%s"""".format(url)
-  
+
   override def toString: String = {
     "GroupGrantee[%s]".format(url)
   }

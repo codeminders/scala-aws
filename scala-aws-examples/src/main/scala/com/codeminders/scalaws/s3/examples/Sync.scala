@@ -2,8 +2,9 @@ package com.codeminders.scalaws.s3.examples
 
 import com.codeminders.scalaws.s3.AWSS3
 import com.codeminders.scalaws.AWSCredentials
-import java.io.File
+import com.codeminders.scalaws.s3.Implicits._
 import com.codeminders.scalaws.s3.model.Key
+import java.io.File
 import scala.annotation.tailrec
 import java.util.Date
 
