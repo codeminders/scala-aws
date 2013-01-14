@@ -106,7 +106,7 @@ class CanonicalGrantee(val uid: String, val displayName: String) extends Grantee
   override def hashCode(): Int = 41 * (
     41 + this.uid.hashCode()) + this.displayName.hashCode()
 
-  override def granteeID = uid
+  override def granteeID = """id="%s"""".format(uid)
 
   override def toString: String = {
     "CanonicalGrantee[id=%s,displayName=%s]".format(uid, displayName)
