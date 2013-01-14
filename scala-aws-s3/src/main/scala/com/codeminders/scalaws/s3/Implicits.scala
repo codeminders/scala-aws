@@ -9,6 +9,8 @@ import com.codeminders.scalaws.s3.model.Bucket
 import com.codeminders.scalaws.s3.api.RichBucket
 import com.codeminders.scalaws.s3.api.RichS3Object
 import com.codeminders.scalaws.s3.model.S3Object
+import scala.io.Source
+import java.io.InputStream
 
 object Implicits {
   
@@ -21,15 +23,27 @@ object Implicits {
   }
   
   implicit def string2S3ObjectBuilder(data: String): S3ObjectBuilder = {
-    new S3ObjectBuilder(IOUtils.toInputStream(data), data.length())
+    S3ObjectBuilder(data)
   }
   
   implicit def file2S3ObjectBuilder(file: File): S3ObjectBuilder = {
-    new S3ObjectBuilder(new FileInputStream(file), file.length())
+    S3ObjectBuilder(file)
   }
   
-  implicit def key2S3ObjectBuilder(data: Key): S3ObjectBuilder = {
-    new S3ObjectBuilder(IOUtils.toInputStream(data.name), data.name.length())
+  implicit def s3Object2S3ObjectBuilder(obj: S3Object): S3ObjectBuilder = {
+    S3ObjectBuilder(obj)
+  }
+  
+  implicit def richS3Object2S3ObjectBuilder(obj: RichS3Object): S3ObjectBuilder = {
+    S3ObjectBuilder(richS3Object2S3Object(obj))
+  }
+  
+  implicit def sourceAndLong2S3ObjectBuilder(data: (Source, Long)): S3ObjectBuilder = {
+    S3ObjectBuilder(data._1, data._2)
+  }
+  
+  implicit def inputStreamAndLong2S3ObjectBuilder(data: (InputStream, Long)): S3ObjectBuilder = {
+    S3ObjectBuilder(data._1, data._2)
   }
   
   implicit def richBucket2Bucket(b : RichBucket): Bucket = {

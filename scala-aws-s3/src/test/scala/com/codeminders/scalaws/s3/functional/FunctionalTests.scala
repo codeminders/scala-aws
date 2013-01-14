@@ -19,6 +19,8 @@ import com.codeminders.scalaws.s3.model.Grant
 import com.codeminders.scalaws.s3.model.Grantee
 import com.codeminders.scalaws.s3.model.ACL
 import com.codeminders.scalaws.s3.model.CanonicalGrantee
+import com.codeminders.scalaws.s3.model.Key
+import com.codeminders.scalaws.s3.model.S3Object
 
 @RunWith(classOf[JUnitRunner])
 class FunctionalTests extends BasicUnitTest {
@@ -250,6 +252,15 @@ class FunctionalTests extends BasicUnitTest {
     assert(acl.grants.find(g => g == new Grant(GroupGrantee.AllUsers, Permission.READ_ACP)) != None)
     assert(acl.grants.find(g => g == new Grant(GroupGrantee.AllUsers, Permission.WRITE_ACP)) != None)
     assert(acl.grants.find(g => g == new Grant(new CanonicalGrantee(acl.owner.uid, acl.owner.displayName), Permission.FULL_CONTROL)) != None)
+  }
+  
+  test("Verifies correctness of the Copy Object Operation") {
+    val bucket1 = client.create(randomBucketName)
+    val bucket2 = client.create(randomBucketName)
+    removeBucketOnExit(bucket1)
+    removeBucketOnExit(bucket2)
+    bucket2("2") = bucket1("1") = "Data of Object 1"
+    assert("Data of Object 1" === IOUtils.toString(bucket2("2").content))
   }
 
 }

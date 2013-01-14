@@ -8,10 +8,32 @@ import Permission._
 import CannedACL._
 import ServerSideEncryption._
 import org.apache.commons.io.IOUtils
+import java.io.File
+import java.io.FileInputStream
+import scala.io.Source
+import com.codeminders.scalaws.helpers.io.SourceInputStream
+import com.codeminders.scalaws.helpers.io.EmptyInputStream
 
 
 
-class S3ObjectBuilder(var content: InputStream, var contentLength: Long) {
+class S3ObjectBuilder private {
+  
+  var content: InputStream = new EmptyInputStream
+  
+  var contentLength: Long = 0
+  
+  var copySource: Option[String] = None
+  
+  private def this(content: InputStream, contentLength: Long) = {
+    this()
+    this.content = content
+    this.contentLength = contentLength
+  }
+  
+  private def this(src: String) = {
+    this()
+    this.copySource = Option(src)
+  }
   
   private var cannedACL: Option[CannedACL] = None
   
@@ -76,6 +98,10 @@ class S3ObjectBuilder(var content: InputStream, var contentLength: Long) {
       }
     }
     
+    if(copySource != None) {
+      r += Tuple2("x-amz-copy-source", copySource.get)
+    }
+    
     if(!userMetadata.isEmpty){
       for(meta <- userMetadata){
     	  r += Tuple2("x-amz-meta-" + meta._1, meta._2)
@@ -108,7 +134,28 @@ class S3ObjectBuilder(var content: InputStream, var contentLength: Long) {
     r.toList
   }
   
-  def s3Object(bucket: Bucket, key: Key): S3Object = {
-    new S3Object(bucket, key, content, contentLength)
-  }
 }
+
+object S3ObjectBuilder{
+  def apply(data: String): S3ObjectBuilder = {
+    new S3ObjectBuilder(IOUtils.toInputStream(data), data.length())
+  }
+  
+  def apply(data: File): S3ObjectBuilder = {
+    new S3ObjectBuilder(new FileInputStream(data), data.length())
+  }
+  
+  def apply(data: Source, length: Long): S3ObjectBuilder = {
+    new S3ObjectBuilder(new SourceInputStream(data), length)
+  }
+  
+  def apply(data: InputStream, length: Long): S3ObjectBuilder = {
+    new S3ObjectBuilder(data, length)
+  }
+  
+  def apply(obj: S3Object): S3ObjectBuilder = {
+    new S3ObjectBuilder("%s/%s".format(obj.bucket.name, obj.key.name))
+  }
+  
+}
+    
