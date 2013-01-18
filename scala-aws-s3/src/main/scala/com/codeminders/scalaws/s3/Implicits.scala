@@ -11,6 +11,8 @@ import com.codeminders.scalaws.s3.api.RichS3Object
 import com.codeminders.scalaws.s3.model.S3Object
 import scala.io.Source
 import java.io.InputStream
+import com.codeminders.scalaws.s3.model.MultipartUpload
+import com.codeminders.scalaws.s3.api.RichMultipartUpload
 
 object Implicits {
   
@@ -46,12 +48,21 @@ object Implicits {
     S3ObjectBuilder(data._1, data._2)
   }
   
+  implicit def inputStreamAndInt2S3ObjectBuilder(data: (InputStream, Int)): S3ObjectBuilder = {
+    S3ObjectBuilder(data._1, data._2)
+  }
+  
   implicit def richBucket2Bucket(b : RichBucket): Bucket = {
 	  b.bucket
   }
   
   implicit def richS3Object2S3Object(obj : RichS3Object): S3Object = {
-	  new S3Object(obj.bucket, obj.key, obj.content, obj.contentLength)
+    val content = obj.content()
+	new S3Object(obj.bucket, obj.key, content._1, content._2)
+  }
+  
+  implicit def richMultipartUpload2MultipartUpload(upload : RichMultipartUpload): MultipartUpload = {
+    upload.toMultipartUpload
   }
   
 }

@@ -20,7 +20,7 @@ object ScalaAWSBuild extends Build {
   lazy val core = Project(
     id = "scala-aws-core",
     base = file("scala-aws-core"), 
-    settings = Defaults.defaultSettings ++ buildSettings ++ Seq(libraryDependencies ++= Seq(Compile.httpclient, Compile.commonsio, Compile.commonscodec, Test.junit, Test.scalatest)))
+    settings = Defaults.defaultSettings ++ buildSettings ++ Seq(libraryDependencies ++= Seq(Compile.httpclient, Compile.commonsio, Compile.commonscodec, Test.junit, Test.scalatest, Test.commonmath)))
 
   lazy val s3 = Project(
     id = "scala-aws-s3",
@@ -43,5 +43,6 @@ object Dependencies {
   object Test {
     val junit = "junit" % "junit" % "4.10" % "test"
     val scalatest = "org.scalatest" % "scalatest_2.9.2" % "1.8" % "test"
+    val commonmath = "commons-math" % "commons-math" % "1.2"
   }
 }

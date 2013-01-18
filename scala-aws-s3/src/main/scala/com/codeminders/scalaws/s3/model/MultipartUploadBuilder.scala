@@ -13,25 +13,10 @@ import java.io.FileInputStream
 import scala.io.Source
 import com.codeminders.scalaws.helpers.io.SourceInputStream
 import com.codeminders.scalaws.helpers.io.EmptyInputStream
+import com.codeminders.scalaws.s3.api.RichS3Object
+import com.codeminders.scalaws.s3.api.RichMultipartUpload
 
-class S3ObjectBuilder private {
-  
-  var content: InputStream = EmptyInputStream()
-  
-  var copySource: Option[String] = None
-  
-  var contentLength: Long = 0
-  
-  private def this(content: InputStream, contentLength: Long) = {
-    this()
-    this.content = content
-    this.contentLength = contentLength
-  }
-  
-  private def this(src: String) = {
-    this()
-    this.copySource = Option(src)
-  }
+class MultipartUploadBuilder{
   
   private var cannedACL: Option[CannedACL] = None
   
@@ -55,13 +40,13 @@ class S3ObjectBuilder private {
   
   private var contentType: Option[String] = None
   
-  def withCannedACL(cannedACL: CannedACL): S3ObjectBuilder = {
+  def withCannedACL(cannedACL: CannedACL): MultipartUploadBuilder = {
     explicitACL = mutable.Map.empty
     this.cannedACL = Option(cannedACL)
     this
   }
   
-  def withExplicitACL(p: Permission, uid: String): S3ObjectBuilder = {
+  def withExplicitACL(p: Permission, uid: String): MultipartUploadBuilder = {
     cannedACL = None
     explicitACL.get(p) match {
       case None => explicitACL(p) = List(uid)
@@ -70,12 +55,12 @@ class S3ObjectBuilder private {
     this
   }
   
-  def withContentType(contentType: String): S3ObjectBuilder = {
+  def withContentType(contentType: String): MultipartUploadBuilder = {
     this.contentType = Option(contentType)
     this
   }
   
-  def withMetadata(key: String, value: String): S3ObjectBuilder = {
+  def withMetadata(key: String, value: String): MultipartUploadBuilder = {
     this.userMetadata += Tuple2(key, value)
     this
   }
@@ -94,10 +79,6 @@ class S3ObjectBuilder private {
           case FULL_CONTROL => uids.foreach(u => r += Tuple2("x-amz-grant-full-control", u))
         }
       }
-    }
-    
-    if(copySource != None) {
-      r += Tuple2("x-amz-copy-source", copySource.get)
     }
     
     if(!userMetadata.isEmpty){
@@ -133,27 +114,3 @@ class S3ObjectBuilder private {
   }
   
 }
-
-object S3ObjectBuilder{
-  def apply(data: String): S3ObjectBuilder = {
-    new S3ObjectBuilder(IOUtils.toInputStream(data), data.length())
-  }
-  
-  def apply(data: File): S3ObjectBuilder = {
-    new S3ObjectBuilder(new FileInputStream(data), data.length())
-  }
-  
-  def apply(data: Source, length: Long): S3ObjectBuilder = {
-    new S3ObjectBuilder(new SourceInputStream(data), length)
-  }
-  
-  def apply(data: InputStream, length: Long): S3ObjectBuilder = {
-    new S3ObjectBuilder(data, length)
-  }
-  
-  def apply(obj: S3Object): S3ObjectBuilder = {
-    new S3ObjectBuilder("%s/%s".format(obj.bucket.name, obj.key.name))
-  }
-  
-}
-    

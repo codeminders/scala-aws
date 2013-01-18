@@ -13,6 +13,10 @@ abstract class HTTPClient(protected val config: ClientConfiguration) {
     handler(postProccess(invoke(HTTPMethod.PUT, preProcess(HTTPMethod.PUT, r))(Option(content), contentLength)))
   }
   
+  def post[T](r: Request, handler: (Response) => T)(content: InputStream, contentLength: Long): T = {
+    handler(postProccess(invoke(HTTPMethod.POST, preProcess(HTTPMethod.POST, r))(Option(content), contentLength)))
+  }
+  
   def delete[T](r: Request, handler: (Response) => T): T = {
     handler(postProccess(invoke(HTTPMethod.DELETE, preProcess(HTTPMethod.DELETE, r))()))
   }

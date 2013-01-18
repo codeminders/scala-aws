@@ -9,9 +9,10 @@ import org.apache.commons.io.IOUtils
 import java.io.InputStream
 import java.io.File
 import java.io.FileOutputStream
+import com.codeminders.scalaws.BasicScalAWSTest
 
 @RunWith(classOf[JUnitRunner])
-class SourceInputStreamTests extends FunSuite {
+class SourceInputStreamTests extends BasicScalAWSTest {
 
   test("Verify SourceInputStream read methods") {
     val testData = "InputStream Data"
@@ -32,17 +33,6 @@ class SourceInputStreamTests extends FunSuite {
     assertInputStreamsEqual(
       getClass.getClassLoader().getResourceAsStream("UTF-8"),
       new SourceInputStream(Source.fromInputStream(getClass.getClassLoader().getResourceAsStream("UTF-8"))))
-  }
-
-  def assertInputStreamsEqual(expected: InputStream, actual: InputStream) {
-    val actualBuffer = Array.ofDim[Byte](1024 * 8)
-    val expectedBuffer = Array.ofDim[Byte](1024 * 8)
-    var bytesRead = 0
-    do {
-      bytesRead = actual.read(actualBuffer)
-      assert(bytesRead === expected.read(expectedBuffer))
-      assert(actualBuffer.zip(expectedBuffer).forall(e => e._1 == e._2))
-    } while (bytesRead > 0)
   }
 
 }
