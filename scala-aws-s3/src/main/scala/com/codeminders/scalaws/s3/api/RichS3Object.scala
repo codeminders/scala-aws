@@ -31,8 +31,8 @@ class RichS3Object(client: HTTPClient, val bucket: Bucket, val key: Key) {
 
   def content(off: Int = 0, len: Long = -1): (InputStream, Long, Long) = {
     require(off >= 0, "Offset could not be a negative value")
-    val req = if (len < 0 && off == 0) Request(bucket.name, key.name)
-    else Request(bucket.name, key.name, headers = Array(("Range", "bytes=%d-%s".format(off, if (len <= 0) "" else len + off - 1))))
+    val req = if (len < 0 && off == 0) Request(bucket, key)
+    else Request(bucket, key, headers = Array(("Range", "bytes=%d-%s".format(off, if (len <= 0) "" else len + off - 1))))
     client.get(req, (r: Response) => {
       val bytesRead = r("Content-Length") match {
           case None => throw AmazonClientException("Got Get object response misses Content-Length header")
@@ -50,13 +50,13 @@ class RichS3Object(client: HTTPClient, val bucket: Bucket, val key: Key) {
   def inputStream = content()._1
 
   def metadata: ObjectMetadata = {
-    val req = Request(bucket.name, key.name)
+    val req = Request(bucket, key)
     extractObjectMetadata(client.head(req)._2)
   }
 
   def acl: ACL = {
 
-    val req = Request(bucket.name, key.name, Array(("acl", "")))
+    val req = Request(bucket, key, Array(("acl", "")))
     ACL(client.get(req, (r: Response) => {
       r.content match {
         case None => throw AmazonClientException("Could not parse an empty response from server")
@@ -66,13 +66,13 @@ class RichS3Object(client: HTTPClient, val bucket: Bucket, val key: Key) {
   }
 
   def acl_=(newACL: ACL) = {
-    val r = Request(bucket.name, key.name, Array(("acl", "")))
+    val r = Request(bucket, key, Array(("acl", "")))
     val data = newACL.toXML.buildString(true)
     client.put(r, (r: Response) => None)(IOUtils.toInputStream(data), data.length())
   }
 
   def acl_=(newACL: CannedACL) = {
-    val r = Request(bucket.name, key.name, Array(("acl", "")), Array(("x-amz-acl", newACL.toString())))
+    val r = Request(bucket, key, Array(("acl", "")), Array(("x-amz-acl", newACL.toString())))
     client.put(r, (r: Response) => None)(IOUtils.toInputStream(""), 0)
   }
 
@@ -88,7 +88,7 @@ class RichS3Object(client: HTTPClient, val bucket: Bucket, val key: Key) {
           case FULL_CONTROL => a ++ e._2.foldLeft(Array.empty[(String, String)])((arr, el) => arr :+ Tuple2("x-amz-grant-full-control", el))
         }
     }
-    val r = Request(bucket.name, key.name, Array(("acl", "")), aclHeaders)
+    val r = Request(bucket, key, Array(("acl", "")), aclHeaders)
     client.put(r, (r: Response) => None)(IOUtils.toInputStream(""), 0)
   }
 

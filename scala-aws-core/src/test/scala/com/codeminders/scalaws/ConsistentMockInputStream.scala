@@ -22,7 +22,7 @@ class ConsistentMockInputStream(off: Int = 0, size: Int = Int.MaxValue) extends 
       -1
     }
     else {
-	    val l = math.min(math.min(b.size - off, size - currentValue), len)
+	    val l = math.max(0, math.min(math.min(b.size - off, size - currentValue), len))
 	    (currentValue until (currentValue + l)).zipWithIndex.foreach(v => b(off + v._2) = v._1.toByte)
 	    currentValue += l
 	    l

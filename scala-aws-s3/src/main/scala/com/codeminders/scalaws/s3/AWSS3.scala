@@ -5,7 +5,6 @@ import com.codeminders.scalaws.http.ClientConfiguration
 import com.codeminders.scalaws.http.HMACSingature
 import com.codeminders.scalaws.http.ApacheHTTPClient
 import com.codeminders.scalaws.AWSCredentials
-import com.codeminders.scalaws.s3.model.Region._
 import com.codeminders.scalaws.s3.model.Bucket
 import com.codeminders.scalaws.s3.model.Owner
 import com.codeminders.scalaws.s3.api.RichBucket
@@ -15,15 +14,16 @@ import com.codeminders.scalaws.AmazonServiceException
 import java.net.URL
 import java.io.ByteArrayInputStream
 import scala.xml.XML
+import com.codeminders.scalaws.s3.model.BucketRegion._
 
 class AWSS3(config: ClientConfiguration) extends ApacheHTTPClient(config) with Traversable[RichBucket]{
   
   def delete(bucket: Bucket): Unit = {
-    delete(Request(bucket.name), (r: Response) => None)
+    delete(Request(bucket), (r: Response) => None)
   }
   
-  def create(bucket: Bucket, region: Region = US_Standard): RichBucket = {
-    val req = Request(bucket.name)
+  def create(bucket: Bucket, region: BucketRegion = US_Standard): RichBucket = {
+    val req = Request(bucket)
     val data = region match {
       case US_Standard => {
         Array[Byte]()
@@ -35,7 +35,7 @@ class AWSS3(config: ClientConfiguration) extends ApacheHTTPClient(config) with T
            </CreateBucketConfiguration>).toString().getBytes()
         }
     }
-    put(req, (r: Response) => None)(new ByteArrayInputStream(data), data.length)
+    put(req, (r: Response) => r.content.get.close())(new ByteArrayInputStream(data), data.length)
     
     new RichBucket(this, bucket)
   }
@@ -46,7 +46,7 @@ class AWSS3(config: ClientConfiguration) extends ApacheHTTPClient(config) with T
   
   def exist(bucket: Bucket): Boolean = {
     try{
-	    head(Request(bucket.name))
+	    head(Request(bucket))
 	    true
     } catch {
       case e: AmazonServiceException => if(e.statusCode == 404) false else throw e

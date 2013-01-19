@@ -152,7 +152,7 @@ object S3ObjectBuilder{
   }
   
   def apply(obj: S3Object): S3ObjectBuilder = {
-    new S3ObjectBuilder("%s/%s".format(obj.bucket.name, obj.key.name))
+    new S3ObjectBuilder("%s/%s".format(obj.bucket, obj.key))
   }
   
 }

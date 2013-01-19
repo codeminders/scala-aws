@@ -36,7 +36,7 @@ import com.codeminders.scalaws.s3.model.StorageClass
 @RunWith(classOf[JUnitRunner])
 class FunctionalTests extends BasicUnitTest {
 
-  ignore("Verifies correctness of the List Bucket Operation") {
+  test("Verifies correctness of the List Bucket Operation") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     assert(0 === bucket.list().size)
@@ -58,7 +58,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(3 === bucket.list(delimiter = "/").commonPrefexes(1).length)
   }
 
-  ignore("Verifies correctness of the Put Object Operation and the Get Object Operation") {
+  test("Verifies correctness of the Put Object Operation and the Get Object Operation") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     bucket("1") = "Data of Object 1"
@@ -363,7 +363,7 @@ class FunctionalTests extends BasicUnitTest {
       {
     	  val uploads = bucket.listUploads(prefix="A", maxUploads=2).toSeq
     	  assert(uploads.size === 2)
-    	  uploads.foreach(u => assert(u.key.name.startsWith("A")))
+    	  uploads.foreach(u => assert(u.key.startsWith("A")))
       }
       {
     	  val uploads = bucket.listUploads(delimiter="/")
@@ -376,12 +376,12 @@ class FunctionalTests extends BasicUnitTest {
       {
     	  val uploads = bucket.listUploads(keyMarker="B/obj2")
     	  assert(uploads.size === 2)
-    	  uploads.foreach(u => assert(u.key.name.startsWith("C")))
+    	  uploads.foreach(u => assert(u.key.startsWith("C")))
       }
       {
     	  val uploads = bucket.listUploads(keyMarker="C/obj2", uploadIdMarker=upload5.uploadID)
     	  assert(uploads.size === 1)
-    	  assert(uploads(0).key.name === "C/obj3")
+    	  assert(uploads(0).key === "C/obj3")
       }
     } finally {
       upload1.abort

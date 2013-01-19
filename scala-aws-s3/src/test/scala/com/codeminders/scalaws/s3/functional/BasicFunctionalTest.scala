@@ -22,27 +22,27 @@ abstract class BasicUnitTest extends BasicScalAWSTest with BeforeAndAfter {
   private val numbersRange = '0' to '9'
   private val random = new Random()
 
-  var client: AWSS3 = AWSS3(AWSCredentials())
+  val client: AWSS3 = AWSS3(AWSCredentials())
 
   after {
     bucketsToRemove.foreach {
       bucket =>
         try {
           client(bucket).list().foreach {
-            key =>
+            objSummary =>
               try {
-                client(bucket).delete(key)
+                client(bucket).delete(objSummary.key)
               } catch {
-                case e => System.err.println("Could not remove key %s".format(key.name))
+                case e => System.err.println("Could not remove key %s".format(objSummary.key))
               }
           }
         } catch {
-          case e => System.err.println("Could not list bucket %s".format(bucket.name))
+          case e => System.err.println("Could not list bucket %s".format(bucket))
         } finally {
           try {
-            client.delete(bucket.name)
+            client.delete(bucket)
           } catch {
-            case e => System.err.println("Could not remove bucket %s".format(bucket.name))
+            case e => System.err.println("Could not remove bucket %s".format(bucket))
           }
         }
     }

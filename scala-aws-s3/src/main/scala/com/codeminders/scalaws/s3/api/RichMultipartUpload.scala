@@ -67,7 +67,7 @@ class RichMultipartUpload(client: HTTPClient, bucket: Bucket, key: Key) extends 
 
   def abort {
     if (!completed) {
-      val req = Request(bucket.name, key.name, Array(("uploadId", uploadID)))
+      val req = Request(bucket, key, Array(("uploadId", uploadID)))
       client.delete(req, (r: Response) => None)
       completed = true
     }
@@ -94,23 +94,23 @@ class RichMultipartUpload(client: HTTPClient, bucket: Bucket, key: Key) extends 
 
   private def copyPart(partNumber: Int, obj: RichS3Object, off: Long = 0, len: Long = -1): String = {
     require(off >= 0, "Offset could not be a negative value")
-    val req = if (off == 0 && len <= 1) Request(this.bucket.name, this.key.name, Array(("partNumber", partNumber.toString), ("uploadId", uploadID)),
-      headers = Array(("x-amz-copy-source", "/%s/%s".format(obj.bucket.name, obj.key.name))))
+    val req = if (off == 0 && len <= 1) Request(this.bucket, this.key, Array(("partNumber", partNumber.toString), ("uploadId", uploadID)),
+      headers = Array(("x-amz-copy-source", "/%s/%s".format(obj.bucket, obj.key))))
     else {
       val actualLength = if (len <= 1) obj.metadata.size.get else len
-      Request(this.bucket.name, this.key.name, Array(("partNumber", partNumber.toString), ("uploadId", uploadID)),
-        headers = Array(("x-amz-copy-source", "/%s/%s".format(obj.bucket.name, obj.key.name)), ("x-amz-copy-source-range", "bytes=%d-%d".format(off, off + actualLength - 1))))
+      Request(this.bucket, this.key, Array(("partNumber", partNumber.toString), ("uploadId", uploadID)),
+        headers = Array(("x-amz-copy-source", "/%s/%s".format(obj.bucket, obj.key)), ("x-amz-copy-source-range", "bytes=%d-%d".format(off, off + actualLength - 1))))
     }
     client.put(req, (r: Response) => XML.load(r.content.get) \\ "ETag" text)(EmptyInputStream(), 0)
   }
 
   private def initiateMultipartUpload: String = {
-    val req = Request(bucket.name, key.name, Array(("uploads", "")))
+    val req = Request(bucket, key, Array(("uploads", "")))
     client.post(req, (r: Response) => XML.load(r.content.get) \\ "UploadId" text)(EmptyInputStream(), 0)
   }
 
   private def uploadPart(partNumber: Int, data: InputStream, size: Long): String = {
-    val req = Request(bucket.name, key.name, Array(("partNumber", partNumber.toString), ("uploadId", uploadID)))
+    val req = Request(bucket, key, Array(("partNumber", partNumber.toString), ("uploadId", uploadID)))
     client.put(req, (r: Response) => r("ETag") match {
       case None => throw AmazonClientException("Put Upload Part response doesn't contain Etag header")
       case Some(v) => v
@@ -118,7 +118,7 @@ class RichMultipartUpload(client: HTTPClient, bucket: Bucket, key: Key) extends 
   }
 
   private def completeMultipartUpload: String = {
-    val req = Request(bucket.name, key.name, Array(("uploadId", uploadID)))
+    val req = Request(bucket, key, Array(("uploadId", uploadID)))
     val xml = scala.xml.Utility.trim(
       <CompleteMultipartUpload>
         {
@@ -141,8 +141,8 @@ class RichMultipartUpload(client: HTTPClient, bucket: Bucket, key: Key) extends 
           new MultipartUploadPart(number.text.toInt, DateUtils.parseIso8601Date(lastModified.text), etag.text.replaceAll("[\"]", ""), size.text.toInt)
       }
     
-    val req = if(partNumberMarker > 0)Request(bucket.name, key.name, Array(("uploadId", uploadID), ("max-parts", maxParts.toString), ("part-number-marker", partNumberMarker.toString())))
-    else Request(bucket.name, key.name, Array(("uploadId", uploadID), ("max-parts", maxParts.toString)))
+    val req = if(partNumberMarker > 0)Request(bucket, key, Array(("uploadId", uploadID), ("max-parts", maxParts.toString), ("part-number-marker", partNumberMarker.toString())))
+    else Request(bucket, key, Array(("uploadId", uploadID), ("max-parts", maxParts.toString)))
     val xml = client.get(req, (r: Response) => {
       r.content match {
         case None => throw AmazonClientException("Could not parse an empty response from server")

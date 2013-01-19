@@ -29,6 +29,7 @@ import scala.xml.XML
 import com.codeminders.scalaws.AmazonClientException
 import com.codeminders.scalaws.AmazonServiceException
 import org.apache.http.client.methods.HttpDelete
+import org.apache.http.impl.conn.PoolingClientConnectionManager
 
 class ApacheHTTPClient(config: ClientConfiguration) extends HTTPClient(config) {
 
@@ -44,7 +45,7 @@ class ApacheHTTPClient(config: ClientConfiguration) extends HTTPClient(config) {
       HttpConnectionParams.setSocketBufferSize(httpClientParams, math.max(config.bufferSize, 1024 * 8))
     }
 
-    val connectionManager: ThreadSafeClientConnManager = new ThreadSafeClientConnManager();
+    val connectionManager: PoolingClientConnectionManager = new PoolingClientConnectionManager();
     connectionManager.setDefaultMaxPerRoute(config.maxConnections);
     connectionManager.setMaxTotal(config.maxConnections);
 

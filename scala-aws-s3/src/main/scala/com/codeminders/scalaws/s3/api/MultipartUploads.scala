@@ -18,7 +18,7 @@ class MultipartUploads private (uploads: Seq[MultipartUpload with MultipartUploa
   
   override def tail: MultipartUploads = {
     if (uploads.tail.isEmpty) {
-      val (uplds, pfxs, hn) = next(prefix, uploads.last.key.name, uploads.last.uploadID)
+      val (uplds, pfxs, hn) = next(prefix, uploads.last.key, uploads.last.uploadID)
       new MultipartUploads(uplds, pfxs, hn, next, prefix)
     } else {
       new MultipartUploads(uploads.tail, prefexes, hasNext, next, prefix)

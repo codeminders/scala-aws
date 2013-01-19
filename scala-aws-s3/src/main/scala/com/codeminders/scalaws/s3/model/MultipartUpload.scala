@@ -16,7 +16,7 @@ class MultipartUpload(val bucket: Bucket, val key: Key, val uploadID: String){
   }
 
   override def toString: String = {
-    "MultipartUpload[bucket=%s,key=%s,uploadID=%s]".format(bucket.name, key.name, uploadID)
+    "MultipartUpload[bucket=%s,key=%s,uploadID=%s]".format(bucket, key, uploadID)
   }
 
 }

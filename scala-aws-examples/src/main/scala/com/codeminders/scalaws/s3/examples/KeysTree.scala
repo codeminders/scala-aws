@@ -78,8 +78,8 @@ class KeysTree(bucketName: String, delimiter: String = "/") {
   def printTree(stream: Keys = client(bucketName).list(delimiter = delimiter), prefix: String = "") {
 
     stream.foreach {
-      k =>
-        println(prefix + "|-" + k.name.substring(stream.prefix.length()))
+      objSummary =>
+        println(prefix + "|-" + objSummary.key.substring(stream.prefix.length()))
     }
 
     printPrefexesRecursively(stream.commonPrefexes)
