@@ -69,7 +69,7 @@ class RichBucket(client: HTTPClient, val bucket: Bucket) {
     new RichMultipartUpload(client, this.bucket, key)
   }
   
-  def listUploads(prefix: String = "", delimiter: String = "", uploadIdMarker: String = "", keyMarker: String = "", maxUploads: Int = 1000): MultipartUploads = {
+  def listUploads(prefix: String = "", delimiter: String = "", keyMarker: String = "", uploadIdMarker: String = "", maxUploads: Int = 1000): MultipartUploads = {
     MultipartUploads(listMultipartUploads(delimiter, maxUploads)(_, _, _), prefix, keyMarker, uploadIdMarker)
   }
 

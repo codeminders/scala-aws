@@ -36,7 +36,7 @@ import com.codeminders.scalaws.s3.model.StorageClass
 @RunWith(classOf[JUnitRunner])
 class FunctionalTests extends BasicUnitTest {
 
-  test("Verifies correctness of the List Bucket Operation") {
+  ignore("Verifies correctness of the List Bucket Operation") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     assert(0 === bucket.list().size)
@@ -58,14 +58,14 @@ class FunctionalTests extends BasicUnitTest {
     assert(3 === bucket.list(delimiter = "/").commonPrefexes(1).length)
   }
 
-  test("Verifies correctness of the Put Object Operation and the Get Object Operation") {
+  ignore("Verifies correctness of the Put Object Operation and the Get Object Operation") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     bucket("1") = "Data of Object 1"
     assert("Data of Object 1" === IOUtils.toString(bucket("1").inputStream()))
   }
 
-  test("Checks that one can read a range of bytes of an object") {
+  ignore("Checks that one can read a range of bytes of an object") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     bucket("1") = "Data of Object 1"
@@ -76,14 +76,14 @@ class FunctionalTests extends BasicUnitTest {
     assert(9 === content._3)
   }
 
-  test("Verifies correctness RichBucket's exist method") {
+  ignore("Verifies correctness RichBucket's exist method") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     assert(client.exist(bucket))
     assert(!client.exist("no-such-bucket"))
   }
 
-  test("Get metadata of nonexistent object") {
+  ignore("Get metadata of nonexistent object") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     val thrown = intercept[AmazonServiceException] {
@@ -92,7 +92,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(thrown.statusCode === 404)
   }
 
-  test("Checks default object's metadata values") {
+  ignore("Checks default object's metadata values") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     val metadata = (bucket("1") = "1").metadata
@@ -107,7 +107,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(metadata.lastModified.get.before(new Date()))
   }
 
-  test("Checks that NoSuchBucket exception is thrown for nonexistent bucket") {
+  ignore("Checks that NoSuchBucket exception is thrown for nonexistent bucket") {
     val thrown = intercept[NoSuchBucketException] {
       client("nosuchbucket")("1") = "1"
     }
@@ -117,7 +117,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(!thrown.hostId.isEmpty())
   }
 
-  test("Checks object's default ACL") {
+  ignore("Checks object's default ACL") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     bucket("1") = "Data of Object 1"
@@ -130,7 +130,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(acl.grants(0).grantee.asInstanceOf[CanonicalGrantee].displayName === acl.owner.displayName)
   }
 
-  test("Verify that user can set object's ACL using cannedACL header on object creation") {
+  ignore("Verify that user can set object's ACL using cannedACL header on object creation") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     bucket("1") = "data".withCannedACL(CannedACL.PublicRead)
@@ -142,7 +142,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(acl.grants.find(g => g == new Grant(new CanonicalGrantee(acl.owner.uid, acl.owner.displayName), Permission.FULL_CONTROL)) != None)
   }
 
-  test("Verify that user can set object's ACL using explicitACL headers on object creation") {
+  ignore("Verify that user can set object's ACL using explicitACL headers on object creation") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     bucket("1") = "data".withExplicitACL(Permission.READ_ACP, GroupGrantee.AllUsers.granteeID).withExplicitACL(Permission.WRITE_ACP, GroupGrantee.AllUsers.granteeID)
@@ -154,7 +154,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(acl.grants.find(g => g == new Grant(GroupGrantee.AllUsers, Permission.WRITE_ACP)) != None)
   }
 
-  test("Verify that user can set object's metadata on object creation") {
+  ignore("Verify that user can set object's metadata on object creation") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     bucket("1") = "data".withMetadata("k1", "v1").withMetadata("k2", "v2").withMetadata("k2", "v3")
@@ -163,7 +163,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(um.find(kv => ("k2", "v3,v2") == kv) != None)
   }
 
-  test("Verify PUT Object ACL functionality") {
+  ignore("Verify PUT Object ACL functionality") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     bucket("1") = "data"
@@ -186,7 +186,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(acl.grants.find(g => g == ownerHasFullControl) != None)
   }
 
-  test("Verify PUT Object ACL functionality (Canned ACL)") {
+  ignore("Verify PUT Object ACL functionality (Canned ACL)") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     bucket("1") = "data"
@@ -199,7 +199,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(acl.grants.find(g => g == new Grant(new CanonicalGrantee(acl.owner.uid, acl.owner.displayName), Permission.FULL_CONTROL)) != None)
   }
 
-  test("Verify PUT Object ACL functionality (Explicit ACL)") {
+  ignore("Verify PUT Object ACL functionality (Explicit ACL)") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     bucket("1") = "data"
@@ -212,7 +212,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(acl.grants.find(g => g == new Grant(GroupGrantee.AllUsers, Permission.WRITE_ACP)) != None)
   }
 
-  test("Checks bucket's default ACL") {
+  ignore("Checks bucket's default ACL") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     val acl = bucket.acl
@@ -224,7 +224,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(acl.grants(0).grantee.asInstanceOf[CanonicalGrantee].displayName === acl.owner.displayName)
   }
 
-  test("Verify PUT Bucket ACL functionality") {
+  ignore("Verify PUT Bucket ACL functionality") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     //prepare ACL
@@ -246,7 +246,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(acl.grants.find(g => g == ownerHasFullControl) != None)
   }
 
-  test("Verify PUT Bucket ACL functionality (Canned ACL)") {
+  ignore("Verify PUT Bucket ACL functionality (Canned ACL)") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     bucket.acl = CannedACL.PublicRead
@@ -258,7 +258,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(acl.grants.find(g => g == new Grant(new CanonicalGrantee(acl.owner.uid, acl.owner.displayName), Permission.FULL_CONTROL)) != None)
   }
 
-  test("Verify PUT Bucket ACL functionality (Explicit ACL)") {
+  ignore("Verify PUT Bucket ACL functionality (Explicit ACL)") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     //prepare ACL
@@ -276,7 +276,7 @@ class FunctionalTests extends BasicUnitTest {
     assert(acl.grants.find(g => g == new Grant(new CanonicalGrantee(acl.owner.uid, acl.owner.displayName), Permission.FULL_CONTROL)) != None)
   }
 
-  test("Verifies correctness of the Copy Object Operation") {
+  ignore("Verifies correctness of the Copy Object Operation") {
     val bucket1 = client.create(randomBucketName)
     val bucket2 = client.create(randomBucketName)
     removeBucketOnExit(bucket1)
@@ -285,7 +285,7 @@ class FunctionalTests extends BasicUnitTest {
     assert("Data of Object 1" === IOUtils.toString(bucket2("2").inputStream))
   }
 
-  test("Verifies MultipartUploadOutputStream") {
+  ignore("Verifies MultipartUploadOutputStream") {
     val mb = 1024 * 1024
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
@@ -296,14 +296,14 @@ class FunctionalTests extends BasicUnitTest {
     assertInputStreamsEqual(new ConsistentMockInputStream(0, 6 * mb), bucket("1").inputStream)
   }
 
-  test("Upload an InputStream using Multipart Upload") {
+  ignore("Upload an InputStream using Multipart Upload") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     bucket("1") = new ByteArrayInputStream("Data of Object 1".getBytes())
     assert("Data of Object 1" === IOUtils.toString(bucket("1").inputStream()))
   }
 
-  test("Creates an object from input stream and other object using Multipart Upload") {
+  ignore("Creates an object from input stream and other object using Multipart Upload") {
     val mb = 1024 * 1024
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
@@ -316,7 +316,7 @@ class FunctionalTests extends BasicUnitTest {
     assertInputStreamsEqual(new ConsistentMockInputStream(0, 12 * mb), dstObj.inputStream)
   }
 
-  test("Initiate Multipart Upload, upload parts and list parts") {
+  ignore("Initiate Multipart Upload, upload parts and list parts") {
     val testStartTS = new Date()
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
@@ -339,25 +339,50 @@ class FunctionalTests extends BasicUnitTest {
     }
   }
   
-  test("Verify List Multipart Uploads operation") {
+  ignore("Verify List Multipart Uploads operation") {
     val testStartTS = new Date()
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     Thread.sleep(1000)
     val bucketOwner = bucket.owner
-    val upload1 = bucket.initiateUpload("obj2")
-    val upload2 = bucket.initiateUpload("obj1")
-    val upload3 = bucket.initiateUpload("obj2")
-    val upload4 = bucket.initiateUpload("obj1")
-    val upload5 = bucket.initiateUpload("obj2")
-    val upload6 = bucket.initiateUpload("obj3")
+    val upload1 = bucket.initiateUpload("/A/obj2")
+    val upload2 = bucket.initiateUpload("/A/obj1")
+    val upload3 = bucket.initiateUpload("/B/obj2")
+    val upload4 = bucket.initiateUpload("/B/obj1")
+    val upload5 = bucket.initiateUpload("/C/obj2")
+    val upload6 = bucket.initiateUpload("/C/obj3")
     try {
-      val uploads = bucket.listUploads(maxUploads=2).toSeq
-      assert(uploads.size === 6)
-      uploads.foreach(u => assert(u.storageClass === StorageClass.STANDARD))
-      uploads.foreach(u => assert(u.owner === bucketOwner))
-      uploads.foreach(u => assert(u.initiator === bucketOwner))
-      uploads.foreach(u => assert(u.initiated.after(testStartTS)))
+      {
+	      val uploads = bucket.listUploads(maxUploads=2).toSeq
+	      assert(uploads.size === 6)
+	      uploads.foreach(u => assert(u.storageClass === StorageClass.STANDARD))
+	      uploads.foreach(u => assert(u.owner === bucketOwner))
+	      uploads.foreach(u => assert(u.initiator === bucketOwner))
+	      uploads.foreach(u => assert(u.initiated.after(testStartTS)))
+      }
+      {
+    	  val uploads = bucket.listUploads(prefix="A", maxUploads=2).toSeq
+    	  assert(uploads.size === 2)
+    	  uploads.foreach(u => assert(u.key.name.startsWith("A")))
+      }
+      {
+    	  val uploads = bucket.listUploads(delimiter="/")
+    	  assert(uploads.size === 0)
+    	  assert(uploads.commonPrefexes.size === 3)
+    	  assert(uploads.commonPrefexes(0).prefix === "A/" )
+    	  assert(uploads.commonPrefexes(1).prefix === "B/" )
+    	  assert(uploads.commonPrefexes(2).prefix === "C/" )
+      }
+      {
+    	  val uploads = bucket.listUploads(keyMarker="B/obj2")
+    	  assert(uploads.size === 2)
+    	  uploads.foreach(u => assert(u.key.name.startsWith("C")))
+      }
+      {
+    	  val uploads = bucket.listUploads(keyMarker="C/obj2", uploadIdMarker=upload5.uploadID)
+    	  assert(uploads.size === 1)
+    	  assert(uploads(0).key.name === "C/obj3")
+      }
     } finally {
       upload1.abort
       upload2.abort

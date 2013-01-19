@@ -29,7 +29,7 @@ class RichMultipartUpload(client: HTTPClient, bucket: Bucket, key: Key) extends 
 
   private val etags: IndexedBuffer[String] = new IndexedBuffer()
 
-  private val uploadID = initiateMultipartUpload
+  val uploadID = initiateMultipartUpload
 
   private var _etag: Option[String] = None
 
