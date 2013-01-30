@@ -31,7 +31,7 @@ abstract class BasicUnitTest extends BasicScalAWSTest with BeforeAndAfter {
           client(bucket).list().foreach {
             objSummary =>
               try {
-                client(bucket).delete(objSummary.key)
+                client(bucket).delete(objSummary.key) 
               } catch {
                 case e => System.err.println("Could not remove key %s".format(objSummary.key))
               }

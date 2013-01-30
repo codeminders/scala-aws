@@ -9,7 +9,7 @@ object ScalaAWSBuild extends Build {
 
   lazy val buildSettings = Seq(
     organization := "com.codeminders.scalaws",
-    version      := "1.0.0",
+    version      := "1.0.0-SNAPSHOT",
     scalaVersion := "2.9.2")
 
   lazy val root = Project(

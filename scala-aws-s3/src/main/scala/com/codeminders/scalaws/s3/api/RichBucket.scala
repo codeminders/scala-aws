@@ -33,6 +33,7 @@ import com.codeminders.scalaws.s3.model.MultipartUpload
 import scala.collection.mutable.ArrayBuffer
 import com.codeminders.scalaws.s3.model.Owner
 import com.codeminders.scalaws.s3.model.StorageClass
+import com.codeminders.scalaws.s3.model.S3ObjectSummary
 
 class RichBucket(client: HTTPClient, val bucket: Bucket) {
   
@@ -70,8 +71,18 @@ class RichBucket(client: HTTPClient, val bucket: Bucket) {
     MultipartUploads(listMultipartUploads(delimiter, maxUploads)(_, _, _), prefix, keyMarker, uploadIdMarker)
   }
 
-  def list(prefix: String = "", delimiter: String = "", maxKeys: Int = 1000, marker: String = ""): Keys = {
+  def list(prefix: String = "", delimiter: String = "", maxKeys: Int = Int.MaxValue, marker: String = ""): Keys = {
     Keys(client, bucket, prefix, delimiter, maxKeys, marker)
+  }
+  
+  def list(): Seq[S3ObjectSummary] = {
+    list("", "", Int.MaxValue, "").foldLeft(ArrayBuffer[S3ObjectSummary]()){
+      (b, e) =>
+        e match {
+          case Left(obj) => b += obj
+          case Right(keys) => b  
+        }
+    }
   }
 
   def exist(key: Key): Boolean = {

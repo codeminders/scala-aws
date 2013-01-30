@@ -76,8 +76,8 @@ class KeysTree(bucketName: String, delimiter: String = "/") {
    *
    */
   def printTree(stream: Keys = client(bucketName).list(delimiter = delimiter), prefix: String = "") {
-
-    stream.foreach {
+    
+    stream.keys.foreach {
       objSummary =>
         println(prefix + "|-" + objSummary.key.substring(stream.prefix.length()))
     }

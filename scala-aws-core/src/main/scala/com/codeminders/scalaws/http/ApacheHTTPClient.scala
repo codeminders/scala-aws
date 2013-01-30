@@ -30,6 +30,7 @@ import com.codeminders.scalaws.AmazonClientException
 import com.codeminders.scalaws.AmazonServiceException
 import org.apache.http.client.methods.HttpDelete
 import org.apache.http.impl.conn.PoolingClientConnectionManager
+import java.io.IOException
 
 class ApacheHTTPClient(config: ClientConfiguration) extends HTTPClient(config) {
 

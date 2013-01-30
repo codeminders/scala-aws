@@ -40,25 +40,24 @@ class FunctionalTests extends BasicUnitTest {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     assert(0 === bucket.list().size)
-    bucket("1") = "1"
-    bucket("A/2") = "2"
-    bucket("A/3") = "3"
-    bucket("B/4") = "4"
-    bucket("B/5") = "5"
-    bucket("B/6") = "6"
-    assert(0 === bucket.list().commonPrefexes.size)
-    assert(6 === bucket.list().length)
-    assert(0 === bucket.list(maxKeys = 1).commonPrefexes.size)
-    assert(6 === bucket.list(maxKeys = 1).length)
-    assert(2 === bucket.list(delimiter = "/").commonPrefexes.size)
-    assert(1 === bucket.list(delimiter = "/").length)
-    assert("A/" === bucket.list(delimiter = "/").commonPrefexes(0).prefix)
-    assert(2 === bucket.list(delimiter = "/").commonPrefexes(0).length)
-    assert("B/" === bucket.list(delimiter = "/").commonPrefexes(1).prefix)
-    assert(3 === bucket.list(delimiter = "/").commonPrefexes(1).length)
+    bucket("a") = "1"
+    bucket("b") = "2"
+    bucket("c") = "3"
+    bucket("a/a") = "4"
+    bucket("a/b") = "5"
+    bucket("b/a") = "6"
+    bucket("b/b") = "7"
+    bucket("b/c") = "8"
+    assert(8 === bucket.list().size)
+    val delimitedList = bucket.list(delimiter="/")
+    assert(5 === delimitedList.size)
+    assert(3 === delimitedList.keys.size)
+    assert(2 === delimitedList.commonPrefexes.size)
+    assert(8 === bucket.list(maxKeys = 1).size)
+    assert(5 === bucket.list(maxKeys = 1, delimiter="/").size)
   }
 
-  test("Verifies correctness of the Put Object Operation and the Get Object Operation") {
+  ignore("Verifies correctness of the Put Object Operation and the Get Object Operation") {
     val bucket = client.create(randomBucketName)
     removeBucketOnExit(bucket)
     bucket("1") = "Data of Object 1"
