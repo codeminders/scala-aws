@@ -1,0 +1,1 @@
+Scala-AWS is a Scala library that provides interfaces to Amazon Web Services. At the moment, the library is under construction and supports only Amazon S3 service.
